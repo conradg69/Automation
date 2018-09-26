@@ -1,3 +1,4 @@
+#Open Physical Folders
 <#
 invoke-item	'\\vrgefs01\shared\IT\Programme Victory\Releases\Web Apps\20180427\WUK.6690.30555\WUK.6690.30555'
 invoke-item	'\\vrgefs01\shared\IT\Programme Victory\Releases\Web Apps\20180522\WUK.6716.19200'

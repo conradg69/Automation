@@ -29,7 +29,7 @@ $DeploymentScriptLocations = @(
 
 #Get all the Deployment locations from the Excel Spreadsheet
 $DeploymentScriptLocations = @()
-$DeploymentScriptLocations = Import-Excel -Path C:\Tmp\DeploymentDetails.xlsx -WorksheetName Deployments -HeaderName WebAppsReleases  -DataOnly -Verbose
+$DeploymentScriptLocations = Import-Excel -Path C:\GitRepository\Automation\PreProd Refresh\Supporting Files\DeploymentDetails.xlsx -WorksheetName Deployments -HeaderName WebAppsReleases  -DataOnly -Verbose
 
 #Create local folders
 $Folder = @{
@@ -65,7 +65,7 @@ $FileList | ForEach-Object {
 $FileListFolderTextFiles = $Folder.WebAppsFileLists+'\*.txt'
 $TableChanges = Select-String -Path $FileListFolderTextFiles -Pattern stb
 
-
+#Display table names, file location and line number
 Write-Host 'Table Changes'
 $TableChanges |  Format-Table -Property LineNumber,Line, Filename,Pattern -AutoSize
 

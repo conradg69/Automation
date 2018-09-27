@@ -66,7 +66,7 @@ $FileList | ForEach-Object {
 $FileListFolderTextFiles = $Folder.WebAppsFileLists+'\*.txt'
 $TableChanges = Select-String -Path $FileListFolderTextFiles -Pattern stb
 
-#Display table names, file location and line number
+#Display table names, file location with the line number
 Write-Host 'Table Changes'
 $TableChanges |  Format-Table -Property LineNumber,Line, Filename,Pattern -AutoSize
 

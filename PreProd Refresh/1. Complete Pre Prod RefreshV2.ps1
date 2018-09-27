@@ -88,7 +88,7 @@ Select-Object -First 1  |Copy-Item  -Destination $SDLCBreaseBackupFolder -Verbos
 #4. Export user accounts for all Fusion 3.9 databases
 Export-DbaUser -SqlInstance $UATSQLInstance -Database $Databases -FilePath $UserpermissionsScriptOutput 
 
-#5. Restore all Fusion 3.9 database from the SDLC Dev folder
+#5. Restore all 12 Fusion 3.9 database from the SDLC Dev folder
 Restore-DbaDatabase -SqlInstance $UATSQLInstance  -Path '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Fusion39Backups' -WithReplace -Verbose -AllowContinue -WhatIf
 
 #6. Drop PreProd Replication

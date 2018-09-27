@@ -12,7 +12,7 @@ invoke-item	'\\vrgefs01\shared\IT\Programme Victory\Releases\Web Apps\20180813\V
 invoke-item	'\\vrgefs01\shared\IT\Programme Victory\Releases\Web Apps\20180901\VRUKL.6815.26543'
 invoke-item	'\\vrgefs01\shared\IT\Programme Victory\Releases\Web Apps\20180901\VRUKL.6816.29080'
 
-
+#Deployment Locations for SQL scripts
 $DeploymentScriptLocations = @(
 '\\vrgefs01\shared\IT\Programme Victory\Releases\Web Apps\20180427\WUK.6690.30555\WUK.6690.30555',
 '\\vrgefs01\shared\IT\Programme Victory\Releases\Web Apps\20180522\WUK.6716.19200',

@@ -68,5 +68,5 @@ $TableChanges = Select-String -Path $FileListFolderTextFiles -Pattern stb
 
 #Display table names, file location with the line number
 Write-Host 'Table Changes'
-$TableChanges |  Format-Table -Property LineNumber,Line, Filename,Pattern -AutoSize
+$TableChanges |  Format-Table -Property Line, LineNumber, Filename, Pattern -AutoSize
 

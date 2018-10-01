@@ -70,3 +70,11 @@ $TableChanges = Select-String -Path $FileListFolderTextFiles -Pattern stb
 Write-Host 'Table Changes'
 $TableChanges |  Format-Table -Property Line, LineNumber, Filename, Pattern -AutoSize
 
+Invoke-Item $Folder.DeploymentScripts
+Invoke-Item $Folder.WebAppsFileLists
+
+
+#Get current Live replicated articles
+#$RepArticles = Invoke-DbaSqlQuery -SqlInstance 'Wercovruatsqld1,2533' -Database Master -File 'C:\GitRepository\Automation\PreProd Refresh\Supporting Files\GetReplicatedArticles.sql'
+
+

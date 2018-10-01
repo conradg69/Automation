@@ -77,4 +77,9 @@ Invoke-Item $Folder.WebAppsFileLists
 #Get current Live replicated articles
 #$RepArticles = Invoke-DbaSqlQuery -SqlInstance 'Wercovruatsqld1,2533' -Database Master -File 'C:\GitRepository\Automation\PreProd Refresh\Supporting Files\GetReplicatedArticles.sql'
 
+$Table = 'M Database\Schema\[dbo].[thg_OwnerPaymentRun].stb'
+
+$length = $Table.LastIndexOf("]") - $Table.LastIndexOf("[")
+$Table.Substring($Table.LastIndexOf("[") + 1, $length - 1)
+
 

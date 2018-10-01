@@ -61,25 +61,34 @@ $FileList | ForEach-Object {
     Copy-Item $Source $Destination
     $i++
 }
-
+$TableChanges = @()
 #Search all text files for Table Changes (stb extension)
 $FileListFolderTextFiles = $Folder.WebAppsFileLists+'\*.txt'
 $TableChanges = Select-String -Path $FileListFolderTextFiles -Pattern stb
 
 #Display table names, file location with the line number
 Write-Host 'Table Changes'
+
 $TableChanges |  Format-Table -Property Line, LineNumber, Filename, Pattern -AutoSize
 
-Invoke-Item $Folder.DeploymentScripts
-Invoke-Item $Folder.WebAppsFileLists
-
+#Invoke-Item $Folder.DeploymentScripts
+#Invoke-Item $Folder.WebAppsFileLists
 
 #Get current Live replicated articles
-#$RepArticles = Invoke-DbaSqlQuery -SqlInstance 'Wercovruatsqld1,2533' -Database Master -File 'C:\GitRepository\Automation\PreProd Refresh\Supporting Files\GetReplicatedArticles.sql'
+$RepArticles = Invoke-DbaSqlQuery -SqlInstance 'Wercovruatsqld1,2533' -Database Master -File 'C:\GitRepository\Automation\PreProd Refresh\Supporting Files\GetReplicatedArticles.sql'
 
-$Table = 'M Database\Schema\[dbo].[thg_OwnerPaymentRun].stb'
+$UpdatedTables = $TableChanges.Line|  ForEach-Object {
+    
+    $length = $_.LastIndexOf("]") - $_.LastIndexOf("[")
+    $_.Substring($_.LastIndexOf("[") + 1, $length - 1)
+}
 
-$length = $Table.LastIndexOf("]") - $Table.LastIndexOf("[")
-$Table.Substring($Table.LastIndexOf("[") + 1, $length - 1)
+$ReplicatedTablesBeingUpdated = $RepArticles.ArticleName | Where {$UpdatedTables -Contains $_}
+if ($ReplicatedTablesBeingUpdated.count -gt 0) {
+    "The " + $ReplicatedTablesBeingUpdated + " table is currently being replicated from Traveller"
+} 
+else {
+    "No Tables being updated are used by replication"
+}
 
 

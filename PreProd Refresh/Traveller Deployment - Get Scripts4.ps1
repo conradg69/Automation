@@ -86,13 +86,13 @@ if ($TableChanges.count -gt 0) {
 $ReplicatedTablesBeingUpdated = $RepArticles.ArticleName | Where-Object {$UpdatedTables -Contains $_}
 
 if ($ReplicatedTablesBeingUpdated.count -gt 0) {
-    $ReplicatedTablesBeingUpdated | ForEach-Object { "****** " + $_ +  " Table - currently part of Traveller Replication *****" } 
+    $ReplicatedTablesBeingUpdated | ForEach-Object {Write-Host '******'  $_   'Table - currently part of Traveller Replication *****' -ForegroundColor Red} 
 } 
 elseif ($UpdatedTables.count -gt 0) {
-    "The database tables being updated are NOT used by replication"
+    write-host  "The database tables being updated are NOT used by replication" -ForegroundColor Yellow
 }  
 elseif ($UpdatedTables.count -eq 0){
-    "No database tables being updated in any of the Deployments"
+    write-host "No database tables being updated in any of the Deployments" -ForegroundColor Yellow
 }
 
 Invoke-Item $Folder.DeploymentScripts

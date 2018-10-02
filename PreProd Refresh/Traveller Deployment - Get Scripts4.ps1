@@ -89,11 +89,15 @@ if ($ReplicatedTablesBeingUpdated.count -gt 0) {
     $ReplicatedTablesBeingUpdated | ForEach-Object {Write-Host '******'  $_   'Table - currently part of Traveller Replication *****' -ForegroundColor Red} 
 } 
 elseif ($UpdatedTables.count -gt 0) {
+    $wshell = New-Object -ComObject Wscript.Shell
+    $wshell.Popup("The database tables being updated are NOT used by replication", 0, "Done", 0x1)
     write-host  "The database tables being updated are NOT used by replication" -ForegroundColor Yellow
 }  
-elseif ($UpdatedTables.count -eq 0){
+elseif ($UpdatedTables.count -eq 0) {
     write-host "No database tables being updated in any of the Deployments" -ForegroundColor Yellow
 }
 
 Invoke-Item $Folder.DeploymentScripts
 Invoke-Item $Folder.WebAppsFileLists
+
+

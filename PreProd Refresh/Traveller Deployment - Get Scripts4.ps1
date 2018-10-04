@@ -69,6 +69,7 @@ $TableChanges = Select-String -Path $FileListFolderTextFiles -Pattern stb
 Clear-Host
 #Display table names, file location with the line number
 Write-Host 'Table Changes - '  $TableChanges.count "tables found"
+<<<<<<< HEAD
 
 $TableChanges |  Format-Table -Property Line, LineNumber, Filename, Pattern -AutoSize
 
@@ -84,6 +85,38 @@ if ($TableChanges.count -gt 0) {
 }
 
 $ReplicatedTablesBeingUpdated = $RepArticles.ArticleName | Where {$UpdatedTables -Contains $_}
+=======
+
+$TableChanges |  Format-Table -Property Line, LineNumber, Filename, Pattern -AutoSize
+
+#Get current Live replicated articles
+$RepArticles = Invoke-DbaSqlQuery -SqlInstance 'Wercovruatsqld1,2533' -Database Master -File 'C:\GitRepository\Automation\PreProd Refresh\Supporting Files\GetReplicatedArticles.sql'
+
+if ($TableChanges.count -gt 0) {
+    $UpdatedTables = $TableChanges.Line|  ForEach-Object {
+    
+        $length = $_.LastIndexOf("]") - $_.LastIndexOf("[")
+        $_.Substring($_.LastIndexOf("[") + 1, $length - 1)
+    }
+}
+
+$ReplicatedTablesBeingUpdated = $RepArticles.ArticleName | Where-Object {$UpdatedTables -Contains $_}
+
+if ($ReplicatedTablesBeingUpdated.count -gt 0) {
+    $ReplicatedTablesBeingUpdated | ForEach-Object {Write-Host '******'  $_   'Table - currently part of Traveller Replication *****' -ForegroundColor Red} 
+} 
+elseif ($UpdatedTables.count -gt 0) {
+    $wshell = New-Object -ComObject Wscript.Shell
+    $wshell.Popup("The database tables being updated are NOT used by replication", 0, "Done", 0x1)
+    write-host  "The database tables being updated are NOT used by replication" -ForegroundColor Yellow
+}  
+elseif ($UpdatedTables.count -eq 0) {
+    write-host "No database tables being updated in any of the Deployments" -ForegroundColor Yellow
+}
+
+Invoke-Item $Folder.DeploymentScripts
+Invoke-Item $Folder.WebAppsFileLists
+>>>>>>> 12a73bcf544a30c6c969c7a2775c5a683de83316
 
 if ($ReplicatedTablesBeingUpdated.count -gt 0) {
     $ReplicatedTablesBeingUpdated | ForEach-Object { "****** " + $_ +  " Table - currently part of Traveller Replication *****" } 

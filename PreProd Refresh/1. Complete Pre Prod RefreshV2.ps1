@@ -44,7 +44,6 @@ $Fusion39Backups =
         )
         #>
 
-
 #Backup locations of the Live databases
 $FusionILTCacheSearchBackups = '\\10.215.13.143\sqlbackups1\Fusion\Fusion4\ph272908_SQL03\FusionILTCacheSearch\FULL'
 $BreaseLiveBackup = '\\VLOPVRSTOAPP01\SQL_Backups_Traveller\TRAVELLERSQLCL\Brease\FULL'

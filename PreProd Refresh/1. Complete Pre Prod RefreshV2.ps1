@@ -88,7 +88,15 @@ Select-Object -First 1  |Copy-Item  -Destination $SDLCBreaseBackupFolder -Verbos
 Export-DbaUser -SqlInstance $UATSQLInstance -Database $Databases -FilePath $UserpermissionsScriptOutput 
 
 #5. Restore all 12 Fusion 3.9 database from the SDLC Dev folder
-Restore-DbaDatabase -SqlInstance $UATSQLInstance  -Path '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Fusion39Backups' -WithReplace -Verbose -AllowContinue -WhatIf
+$restoreDbaDatabaseSplat = @{
+    SqlInstance = $UATSQLInstance
+    Path = '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Fusion39Backups'
+    WithReplace = $true
+    Verbose = $true
+    AllowContinue = $true
+    WhatIf = $true
+}
+Restore-DbaDatabase @restoreDbaDatabaseSplat
 
 #6. Drop PreProd Replication
 Invoke-DbaSqlQuery -SqlInstance $UATSQLInstance -Database TR4_PRE_PROD -File $DropReplicationScript -Verbose
@@ -109,7 +117,16 @@ Invoke-DbaSqlQuery -SqlInstance $UATSQLInstance -Database Master -File $inputFil
 Backup-DbaDatabase -SqlInstance $UATSQLInstance -Database BreaseUAT -BackupDirectory K:\DBBackups\BreaseUAT\FULL -CompressBackup
 
 #10. Refresh the UAT Brease database
-Restore-DbaDatabase -SqlInstance $UATSQLInstance -DatabaseName BreaseUAT -Path $SDLCBreaseBackupFolder -DestinationDataDirectory K:\SQLData -DestinationLogDirectory K:\SQLTLog -WithReplace -Verbose
+$restoreDbaDatabaseSplat = @{
+    SqlInstance = $UATSQLInstance
+    Path = $SDLCBreaseBackupFolder
+    WithReplace = $true
+    Verbose = $true
+    DatabaseName = 'BreaseUAT'
+    DestinationDataDirectory = 'K:\SQLData'
+    DestinationLogDirectory = 'K:\SQLTLog'
+}
+Restore-DbaDatabase @restoreDbaDatabaseSplat
 
 #11. Apply Brease UAT configuration
 Invoke-DbaSqlQuery -SqlInstance $UATSQLInstance -Database BreaseUAT -File $BreaseUATConfigFile -Verbose
@@ -118,7 +135,17 @@ Invoke-DbaSqlQuery -SqlInstance $UATSQLInstance -Database BreaseUAT -File $Breas
 Invoke-DbaSqlCmd -SqlInstance $UATSQLInstance -Database BreaseUAT -File $BreaseAccountPermissions -Verbose
 
 #Refresh the ILT PreProd database
-Restore-DbaDatabase -SqlInstance $UATSQLInstance -DatabaseName FusionILTCacheSearchPreProd -Path $SDLCDevILTBackupFolder -DestinationDataDirectory F:\SQLData -DestinationLogDirectory F:\SQLTLog -DestinationFileSuffix PreProd -WithReplace -Verbose
+$restoreDbaDatabaseSplat = @{
+    SqlInstance = $UATSQLInstance
+    Path = $SDLCDevILTBackupFolder
+    DestinationFileSuffix = 'PreProd'
+    Verbose = $true
+    DatabaseName = 'FusionILTCacheSearchPreProd'
+    DestinationDataDirectory = 'F:\SQLData'
+    DestinationLogDirectory = 'F:\SQLTLog'
+    WithReplace = $true
+}
+Restore-DbaDatabase @restoreDbaDatabaseSplat
 
 #Add replciation
 #Run script

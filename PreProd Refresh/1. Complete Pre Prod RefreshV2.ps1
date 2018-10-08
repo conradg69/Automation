@@ -1,22 +1,3 @@
-#Location of all the Fusion 3.9 backups
-<#
-$Fusion39Backups = 
-        (
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\HoseasonsAPI\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\HoseasonsBooking\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\HoseasonsContent\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\HoseasonsCore\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\HoseasonsCustomer\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\HoseasonsMarketing\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\HoseasonsProduct\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\PartnersAllocation\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\PartnersAudit\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\PartnersContent\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\PartnersCore\FULL",
-        "\\10.215.13.143\SQLBackups1\Fusion\Fusion39\PartnersPrice\FULL"
-        )
-        #>
-
         $Fusion39Backups = Import-Excel -Path 'P:\PS\PreProd Refresh\DeploymentDetails.xlsx' -WorksheetName DBBackups |
         Where-Object {$_.Category -eq 'Fusion39'}
         $Fusion39Backups = $Fusion39Backups.BackupLocations

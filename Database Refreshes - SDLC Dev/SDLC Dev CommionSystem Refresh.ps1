@@ -22,3 +22,5 @@ write-host 'Restoring'$SDLC.DatabaseName 'Database' -ForegroundColor Yellow
 
 Restore-DbaDatabase -SqlInstance $SDLC.SQLInstance -DatabaseName $SDLC.DatabaseName -Path $BackupLocation.SDLCDevFolder -DestinationDataDirectory $SDLC.DestinationDataDirectory -DestinationLogDirectory $SDLC.DestinationLogDirectory -WithReplace -Verbose
 
+#test message
+

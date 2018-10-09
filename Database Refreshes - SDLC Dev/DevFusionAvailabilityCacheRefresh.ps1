@@ -8,6 +8,7 @@ $SDLC = @{
     DatabaseName = 'FusionAvailabilityCacheDev'
     DestinationDataDirectory = 'H:\SQLData'
     DestinationLogDirectory = 'H:\SQLTLog'
+    Accounts = 'VRGUK\WebTeamReadOnly','VRGUK\Web Dev Team','VRGUK\SDLCQae','VRGUK\SDLCDev','VRGUK\devarajramasamy'
 }
 
 #Create folder if not present
@@ -40,6 +41,8 @@ $restoreDbaDatabaseSplat = @{
 Restore-DbaDatabase @restoreDbaDatabaseSplat
 
 #Drop all database users
-$DBUsers = Get-DbaDatabaseUser $SDLC.SQLInstance -Database $SDLC.DatabaseName -ExcludeSystemUser
+$DBUsers = Get-DbaDatabaseUser $SDLC.SQLInstance -Database $SDLC.DatabaseName -ExcludeSystemUser 
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -User $_}
 
+#Apply permissions
+$SDLC.Accounts | ForEach-Object{New-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Login $_ -Username $_} 

@@ -47,5 +47,9 @@ $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance 
 #Apply permissions
 $SDLC.Accounts | ForEach-Object{New-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Login $_ -Username $_} 
 
+$ShrinklogFile = @"
+DBCC SHRINKFILE (N'FusionAvailabilityCache_log' , 0)
+"@
+
 #ShrinkLogfile
-Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -InputFile F:\PS\SQLRefreshJobs\ShrinkLogFile.sql
+Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $ShrinklogFile

@@ -46,3 +46,6 @@ $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance 
 
 #Apply permissions
 $SDLC.Accounts | ForEach-Object{New-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Login $_ -Username $_} 
+
+#ShrinkLogfile
+Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -InputFile F:\PS\SQLRefreshJobs\ShrinkLogFile.sql

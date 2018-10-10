@@ -44,12 +44,23 @@ Restore-DbaDatabase @restoreDbaDatabaseSplat
 $DBUsers = Get-DbaDatabaseUser $SDLC.SQLInstance -Database $SDLC.DatabaseName -ExcludeSystemUser 
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -User $_}
 
-#Apply User Accounts and permissions
+#Apply permissions
 $SDLC.Accounts | ForEach-Object{New-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Login $_ -Username $_} 
 
+$SDLC.Accounts | ForEach-Object{
+    
+    $GrantDBOPermissions = @"
+EXEC sp_addrolemember N'db_owner', N'$_'
+"@
+
+    Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $GrantDBOPermissions
+}
+
+#Shrink database Logfile
 $ShrinklogFile = @"
 DBCC SHRINKFILE (N'FusionAvailabilityCache_log' , 0)
 "@
 
-#ShrinkLogfile
 Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $ShrinklogFile
+
+

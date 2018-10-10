@@ -44,7 +44,7 @@ Restore-DbaDatabase @restoreDbaDatabaseSplat
 $DBUsers = Get-DbaDatabaseUser $SDLC.SQLInstance -Database $SDLC.DatabaseName -ExcludeSystemUser 
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -User $_}
 
-#Apply permissions
+#Apply User Accounts and permissions
 $SDLC.Accounts | ForEach-Object{New-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Login $_ -Username $_} 
 
 $ShrinklogFile = @"

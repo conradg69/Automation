@@ -10,12 +10,13 @@ $SDLC = @{
     DestinationLogDirectory = 'H:\SQLTLog'
     Accounts = 'VRGUK\WebTeamReadOnly','VRGUK\Web Dev Team','VRGUK\SDLCQae','VRGUK\SDLCDev','VRGUK\devarajramasamy'
 }
+$FusionAvailabilityCacheFolder = $BackupLocation.SDLCDevFolder +'\*'
 
 #Create folder if not present
 if (-not(Test-Path -Path $BackupLocation.SDLCDevFolder)) {New-Item -ItemType directory -Path $BackupLocation.SDLCDevFolder}
 
 #Delete any old backups in the folder
-Remove-Item \\WERCOVRDEVSQLD1\DBRefresh\ProdBackupFiles\FusionAvailabilityCache\* -Recurse -Force
+Remove-Item $FusionAvailabilityCacheFolder -Recurse -Force
 
 write-host 'Copying Latest Backup File to SDLC Dev Server' -ForegroundColor Yellow
 
@@ -44,23 +45,22 @@ Restore-DbaDatabase @restoreDbaDatabaseSplat
 $DBUsers = Get-DbaDatabaseUser $SDLC.SQLInstance -Database $SDLC.DatabaseName -ExcludeSystemUser 
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -User $_}
 
-#Apply permissions
+#Add new accounts to the database
 $SDLC.Accounts | ForEach-Object{New-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Login $_ -Username $_} 
 
+#Add account to the DBO role
 $SDLC.Accounts | ForEach-Object{
     
     $GrantDBOPermissions = @"
-EXEC sp_addrolemember N'db_owner', N'$_'
+    EXEC sp_addrolemember N'db_owner', N'$_'
 "@
-
     Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $GrantDBOPermissions
 }
 
 #Shrink database Logfile
 $ShrinklogFile = @"
-DBCC SHRINKFILE (N'FusionAvailabilityCache_log' , 0)
+    DBCC SHRINKFILE (N'FusionAvailabilityCache_log' , 0)
 "@
-
 Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $ShrinklogFile
 
 

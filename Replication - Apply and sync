@@ -16,18 +16,9 @@ exec sp_addpushsubscription_agent @publication = N'pubFusionILTCache', @subscrib
 
 Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database TR4_DEV -Query $SubscriptionScript -Verbose
 
-Import-Module dbatools;
+Find-DbaCommand Replication
+get-help Get-DbaRepPublication -Examples
 
-
-#Get all the Replication Distibution jobs except the StaticAvailability. Restart any idle jobs
-$SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where {($_.Category -eq "REPL-Snapshot" -and $_.Name -notlike "*StaticAvailability*")}
-    foreach($RepJob in $SQLJobs)
-    {
-        if ($RepJob.CurrentRunStatus -eq "Idle")
-        {
-            Start-DbaAgentJob -SqlInstance $RepJob.ComputerName -Job $RepJob.Name
-            write-host "Job Started - $RepJob.Name"
-            $RepJob | Select-Object {Get-Date -Format g} , 'OriginatingServer', 'Name','CurrentRunStatus','LastRunDate','LastRunOutcome','DateCreated','DateLastModified' | 
-                Write-DbaDataTable -SqlInstance CP472808SQL -Database DBAdmin -Table PS_ReplicationMonitor -AutoCreateTable -Verbose
-        }
-    }
+$SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*pubFusionILTCache*")}
+$SQLJobs.name
+Start-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Job $SQLJobs.name

@@ -79,11 +79,33 @@ $restoreDbaDatabaseSplat = @{
 }
 Restore-DbaDatabase @restoreDbaDatabaseSplat
 
+
 #6. Drop PreProd Replication
 Invoke-DbaSqlQuery -SqlInstance $UATSQLInstance -Database TR4_PRE_PROD -File $DropReplicationScript -Verbose
 
 <#
 #7. restore Traveller Database ??? Issues
+
+#FULL TR4_DEV restore taken from SSIS package and tested (working)
+$TravellerFullBackup = Get-ChildItem -Path '\\WERCOVRUATSQLD1\DBBackups4\TR4_LIVE\FULL\' -Filter "*.bak" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$TravellerFullBackupFilePath = $TravellerFullBackup.FullName
+
+$TR4_DEVRestoreScript = @"
+    --Alter database TR4_DEV set single_user with rollback immediate 
+    --Alter database TR4_DEV set multi_user with rollback immediate 
+    RESTORE DATABASE TR4_DEV
+    FROM  DISK = '$TravellerFullBackupFilePath'
+    WITH    
+    MOVE N'Tr@veller_Data' TO N'I:\SQLData\TR4_DEV.mdf',  
+    MOVE N'Traveller_Data2' TO N'I:\SQLData\TR4_DEV_1.ndf',
+    MOVE 'Traveller_AddData' TO 'P:\SQLData\TR4_DEV_2.ndf',  
+    MOVE 'Tr@veller_Log' TO 'F:\SQLTLog\TR4_DEV_3.ldf',
+    MOVE 'Tr@veller_Log2' TO 'F:\SQLTLog\TR4_Live_Log2.ldf',
+    REPLACE, NORECOVERY,  STATS = 5
+"@
+    Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database Master -Query $TR4_DEVRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
+
+
 
 Restore-DbaDatabase -SqlInstance $UATSQLInstance -DatabaseName TR4_PRE_PROD -Path $TravellerLiveBackup -WithReplace -NoRecovery -Verbose -WhatIf
 $inputFile='\\WERCOVRDEVSQLD1\PreProd Refresh\TravellerFULLRefresh.sql'

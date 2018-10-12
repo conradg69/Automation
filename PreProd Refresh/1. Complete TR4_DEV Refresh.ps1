@@ -1,29 +1,13 @@
-        $Fusion39Backups = Import-Excel -Path 'P:\PS\PreProd Refresh\DeploymentDetails.xlsx' -WorksheetName DBBackups |
-        Where-Object {$_.Category -eq 'Fusion39'}
-        $Fusion39Backups = $Fusion39Backups.BackupLocations
 
-        $Databases = Import-Excel -Path 'P:\PS\PreProd Refresh\DeploymentDetails.xlsx' -WorksheetName DBBackups |
-        Where-Object {$_.Category -eq 'Fusion39' -or $_.Category -eq 'PreProdILT' }
-        $Databases = $Databases.databases
 
-        <#
-        $Databases = 
-        (
-        'HoseasonsAPI',
-        'HoseasonsBooking',
-        'HoseasonsContent',
-        'HoseasonsCore',
-        'HoseasonsCustomer',
-        'HoseasonsMarketing',
-        'HoseasonsProduct',
-        'PartnersAllocation',
-        'PartnersAudit',
-        'PartnersContent',
-        'PartnersCore',
-        'PartnersPrice',
-        'FusionILTCacheSearchPreProd'
-        )
-        #>
+$TravellerLiveBackup = @{
+    FULLBackup = '\\WERCOVRUATSQLD1\DBBackups4\TR4_LIVE\FULL'
+    DIFFBackup = '\\WERCOVRUATSQLD1\DBBackups2\TR4_LIVE\LOG'
+    FULLBackupFileDetails = Get-ChildItem -Path $TravellerLiveBackup.FULLBackup -Filter "*.bak" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    DIFFBackupFileDetails = Get-ChildItem -Path $TravellerLiveBackup.DIFFBackup -Filter "*.diff" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1 
+}
+$TravellerLiveBackup.FULLBackupFileDetails.FullName
+$TravellerLiveBackup.DIFFBackupFileDetails.FullName
 
 #Backup locations of the Live databases
 $FusionILTCacheSearchBackups = '\\10.215.13.143\sqlbackups1\Fusion\Fusion4\ph272908_SQL03\FusionILTCacheSearch\FULL'

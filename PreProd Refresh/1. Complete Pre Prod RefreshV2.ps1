@@ -137,6 +137,18 @@ Invoke-DbaSqlQuery -SqlInstance $UATSQLInstance -Database BreaseUAT -File $Breas
 #12. Grant the BreaseUAT account DBO permissions to the Brease database
 Invoke-DbaSqlCmd -SqlInstance $UATSQLInstance -Database BreaseUAT -File $BreaseAccountPermissions -Verbose
 
+#Additonal BreaseUAT permissions to add
+<#
+USE [BreaseUAT]
+GO
+CREATE USER [SSRSUser2] FOR LOGIN [SSRSUser2]
+GO
+USE [BreaseUAT]
+GO
+EXEC sp_addrolemember N'db_owner', N'SSRSUser2'
+GO
+#>
+
 #Refresh the ILT PreProd database
 $restoreDbaDatabaseSplat = @{
     SqlInstance = $UATSQLInstance

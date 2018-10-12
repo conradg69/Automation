@@ -1,17 +1,28 @@
 
 
-$TravellerLiveBackup = @{
+$TravellerLiveBackupLocation = @{
     FULLBackup = '\\WERCOVRUATSQLD1\DBBackups4\TR4_LIVE\FULL'
-    DIFFBackup = '\\WERCOVRUATSQLD1\DBBackups2\TR4_LIVE\LOG'
-    FULLBackupFileDetails = Get-ChildItem -Path $TravellerLiveBackup.FULLBackup -Filter "*.bak" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    DIFFBackupFileDetails = Get-ChildItem -Path $TravellerLiveBackup.DIFFBackup -Filter "*.diff" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1 
+    DIFFBackup = '\\WERCOVRUATSQLD1\DBBackups2\TR4_LIVE\LOG'  
 }
-$TravellerLiveBackup.FULLBackupFileDetails.FullName
-$TravellerLiveBackup.DIFFBackupFileDetails.FullName
+$FULLBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.FULLBackup -Filter "*.bak" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+$DIFFBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.DIFFBackup -Filter "*.diff" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
 
-#Backup locations of the Live databases
-$FusionILTCacheSearchBackups = '\\10.215.13.143\sqlbackups1\Fusion\Fusion4\ph272908_SQL03\FusionILTCacheSearch\FULL'
-$BreaseLiveBackup = '\\VLOPVRSTOAPP01\SQL_Backups_Traveller\TRAVELLERSQLCL\Brease\FULL'
+#Restore FULL Backup
+$TR4_DEVFULLRestoreScript = @"
+    Alter database TR4_DEV set single_user with rollback immediate 
+    Alter database TR4_DEV set multi_user with rollback immediate 
+    RESTORE DATABASE TR4_DEV
+    FROM  DISK = '$FULLBackupFileDetails'
+    WITH    
+    MOVE N'Tr@veller_Data' TO N'I:\SQLData\TR4_DEV.mdf',  
+    MOVE N'Traveller_Data2' TO N'I:\SQLData\TR4_DEV_1.ndf',
+    MOVE 'Traveller_AddData' TO 'P:\SQLData\TR4_DEV_2.ndf',  
+    MOVE 'Tr@veller_Log' TO 'F:\SQLTLog\TR4_DEV_3.ldf',
+    MOVE 'Tr@veller_Log2' TO 'F:\SQLTLog\TR4_Live_Log2.ldf',
+    REPLACE, NORECOVERY,  STATS = 5
+"@
+Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database Master -Query $TR4_DEVFULLRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
+
 
 #Backup Destinations on the SDLC Dev Server
 $SDLCDev39BackupFolder = "\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Fusion39Backups"

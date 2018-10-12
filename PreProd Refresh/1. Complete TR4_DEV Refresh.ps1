@@ -1,4 +1,5 @@
-
+$Server = 'WERCOVRDEVSQLD1'
+$DevDatabase = 'TR4_DEV'
 
 $TravellerLiveBackupLocation = @{
     FULLBackup = '\\WERCOVRUATSQLD1\DBBackups4\TR4_LIVE\FULL'
@@ -7,11 +8,12 @@ $TravellerLiveBackupLocation = @{
 $FULLBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.FULLBackup -Filter "*.bak" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
 $DIFFBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.DIFFBackup -Filter "*.diff" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
 
-#Restore FULL Backup
-$TR4_DEVFULLRestoreScript = @"
-    Alter database TR4_DEV set single_user with rollback immediate 
-    Alter database TR4_DEV set multi_user with rollback immediate 
-    RESTORE DATABASE TR4_DEV
+$SQLQueries = @{
+    CDCQuery = "EXEC sys.sp_cdc_add_job 'capture'"
+    TR4_DEVFULLRestoreScript = @"
+    Alter database $DevDatabase set single_user with rollback immediate 
+    Alter database $DevDatabase set multi_user with rollback immediate 
+    RESTORE DATABASE $DevDatabase
     FROM  DISK = '$FULLBackupFileDetails'
     WITH    
     MOVE N'Tr@veller_Data' TO N'I:\SQLData\TR4_DEV.mdf',  
@@ -21,7 +23,16 @@ $TR4_DEVFULLRestoreScript = @"
     MOVE 'Tr@veller_Log2' TO 'F:\SQLTLog\TR4_Live_Log2.ldf',
     REPLACE, NORECOVERY,  STATS = 5
 "@
-Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database Master -Query $TR4_DEVFULLRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
+}
+
+
+#Restore FULL Backup
+Invoke-Sqlcmd2 -ServerInstance $Server -Database Master -Query $SQLQueries.TR4_DEVFULLRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
+
+#Restore DIFF Backup
+
+#CDC
+Invoke-Sqlcmd2 -ServerInstance $Server -Database -Query $SQLQueries.CDCQuery -QueryTimeout ([int]::MaxValue) -Verbose
 
 
 #Backup Destinations on the SDLC Dev Server
@@ -43,34 +54,33 @@ $BreaseAccountPermissions = '\\WERCOVRDEVSQLD1\PreProd Refresh\Brease Account Ac
 #Invoke-Item '\\10.215.13.143\SQLBackups1\Fusion\Fusion39\HoseasonsAPI\FULL'
 
 #1. Loop through each folder, find the latest backup and copy to the SDLC Dev server
-ForEach($BackupFolder in $Fusion39Backups)
-    {
-        Get-ChildItem -Path $BackupFolder -Filter "*.bak" -Recurse|
+ForEach ($BackupFolder in $Fusion39Backups) {
+    Get-ChildItem -Path $BackupFolder -Filter "*.bak" -Recurse|
         Sort-Object LastWriteTime -Descending | 
         Select-Object -First 1 |
-        ForEach-Object($_){Copy-Item $_.FullName -Destination $SDLCDev39BackupFolder -Verbose
+        ForEach-Object($_) {Copy-Item $_.FullName -Destination $SDLCDev39BackupFolder -Verbose
     }
 } 
 
 #2. Get the details for the latest ILT backup from Live and copy to the SDLC server
 Get-ChildItem -Path $FusionILTCacheSearchBackups -Filter "*.bak" -Recurse | Sort-Object LastWriteTime -Descending |
-Select-Object -First 1  |Copy-Item  -Destination $SDLCDevILTBackupFolder -Verbose
+    Select-Object -First 1  |Copy-Item  -Destination $SDLCDevILTBackupFolder -Verbose
 
 #3. Get the details for the latest Brease backup from Live and copy to the SDLC server
 Get-ChildItem -Path $BreaseLiveBackup -Filter "*.bak" -Recurse | Sort-Object LastWriteTime -Descending |
-Select-Object -First 1  |Copy-Item  -Destination $SDLCBreaseBackupFolder -Verbose
+    Select-Object -First 1  |Copy-Item  -Destination $SDLCBreaseBackupFolder -Verbose
 
 #4. Export user accounts for all Fusion 3.9 databases
 Export-DbaUser -SqlInstance $UATSQLInstance -Database $Databases -FilePath $UserpermissionsScriptOutput 
 
 #5. Restore all 12 Fusion 3.9 database from the SDLC Dev folder
 $restoreDbaDatabaseSplat = @{
-    SqlInstance = $UATSQLInstance
-    Path = '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Fusion39Backups'
-    WithReplace = $true
-    Verbose = $true
+    SqlInstance   = $UATSQLInstance
+    Path          = '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Fusion39Backups'
+    WithReplace   = $true
+    Verbose       = $true
     AllowContinue = $true
-    WhatIf = $true
+    WhatIf        = $true
 }
 Restore-DbaDatabase @restoreDbaDatabaseSplat
 
@@ -116,13 +126,13 @@ Backup-DbaDatabase -SqlInstance $UATSQLInstance -Database BreaseUAT -BackupDirec
 
 #10. Refresh the UAT Brease database
 $restoreDbaDatabaseSplat = @{
-    SqlInstance = $UATSQLInstance
-    Path = $SDLCBreaseBackupFolder
-    WithReplace = $true
-    Verbose = $true
-    DatabaseName = 'BreaseUAT'
+    SqlInstance              = $UATSQLInstance
+    Path                     = $SDLCBreaseBackupFolder
+    WithReplace              = $true
+    Verbose                  = $true
+    DatabaseName             = 'BreaseUAT'
     DestinationDataDirectory = 'K:\SQLData'
-    DestinationLogDirectory = 'K:\SQLTLog'
+    DestinationLogDirectory  = 'K:\SQLTLog'
 }
 Restore-DbaDatabase @restoreDbaDatabaseSplat
 
@@ -146,14 +156,14 @@ GO
 
 #Refresh the ILT PreProd database
 $restoreDbaDatabaseSplat = @{
-    SqlInstance = $UATSQLInstance
-    Path = $SDLCDevILTBackupFolder
-    DestinationFileSuffix = 'PreProd'
-    Verbose = $true
-    DatabaseName = 'FusionILTCacheSearchPreProd'
+    SqlInstance              = $UATSQLInstance
+    Path                     = $SDLCDevILTBackupFolder
+    DestinationFileSuffix    = 'PreProd'
+    Verbose                  = $true
+    DatabaseName             = 'FusionILTCacheSearchPreProd'
     DestinationDataDirectory = 'F:\SQLData'
-    DestinationLogDirectory = 'F:\SQLTLog'
-    WithReplace = $true
+    DestinationLogDirectory  = 'F:\SQLTLog'
+    WithReplace              = $true
 }
 Restore-DbaDatabase @restoreDbaDatabaseSplat
 

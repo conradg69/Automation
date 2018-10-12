@@ -13,6 +13,7 @@ $FULLBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.FULLB
 $DIFFBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.DIFFBackup -Filter "*.diff" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
 
 $TR4DevSetupSanitise = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\TR4DevSetup&Sanitise.sql'
+$TR4DevSetupTravellerAcess = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\SetupTravellerAccess.sql'
 
 $SQLQueries = @{
     CDCQuery                 = "EXEC sys.sp_cdc_add_job 'capture'"
@@ -132,13 +133,14 @@ $Accounts.ReadWrite | ForEach-Object{
     Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $GrantReadWritePermissions
 }
 
-
-
 #Shrink Log
 Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $SQLQueries.TR4_DEVShrinkLogScript -QueryTimeout ([int]::MaxValue) -Verbose
 
 #Setup and Sanitise Traveller
 Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $TR4DevSetupSanitise -QueryTimeout ([int]::MaxValue) -Verbose
+
+#Setup Traveller Access
+Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $TR4DevSetupTravellerAcess -QueryTimeout ([int]::MaxValue) -Verbose
 
 
 #Backup Destinations on the SDLC Dev Server

@@ -15,6 +15,7 @@ $DIFFBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.DIFFB
 $TR4DevSetupSanitise = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\TR4DevSetup&Sanitise.sql'
 $TR4DevSetupTravellerAcess = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\SetupTravellerAccess.sql'
 $UpdateSYNONYMs = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\UpdateSynonyms.sql'
+$LoadCLR = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\CLR.sql'
 
 $SQLQueries = @{
     CDCQuery                 = "EXEC sys.sp_cdc_add_job 'capture'"
@@ -152,6 +153,9 @@ Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $SQLQueries
 
 #Update Synonyms
 Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $UpdateSYNONYMs -QueryTimeout ([int]::MaxValue) -Verbose
+
+#Load CLR
+Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $LoadCLR -QueryTimeout ([int]::MaxValue) -Verbose
 
 
 

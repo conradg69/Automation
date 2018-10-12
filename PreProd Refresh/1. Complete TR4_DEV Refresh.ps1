@@ -25,9 +25,21 @@ $SQLQueries = @{
     MOVE 'Traveller_AddData' TO 'P:\SQLData\TR4_DEV_2.ndf',  
     MOVE 'Tr@veller_Log' TO 'F:\SQLTLog\TR4_DEV_3.ldf',
     MOVE 'Tr@veller_Log2' TO 'F:\SQLTLog\TR4_Live_Log2.ldf',
-    REPLACE, NORECOVERY,  STATS = 5
+    REPLACE, NORECOVERY,  STATS = 5   
+"@
+
+    TR4_DEVDIFFRestoreScript = @"
+    RESTORE DATABASE $DevDatabase
+    FROM  DISK = '$DIFFBackupFileDetails'
+    WITH  RECOVERY, KEEP_CDC, STATS = 5  
+
+    ALTER DATABASE $DevDatabase SET RECOVERY SIMPLE
 "@
 }
+
+
+
+
 <#
 #SORT THIS OUT
 /****** Object:  Schema [VRGUK\WebTeamReadOnly]    Script Date: 03/29/2015 22:53:09 ******/
@@ -81,7 +93,8 @@ CREATE USER [VRGUK\SDLCSQLAgentQAE] FOR LOGIN [VRGUK\SDLCSQLAgentQAE]
 #Restore FULL Backup
 Invoke-Sqlcmd2 -ServerInstance $Server -Database Master -Query $SQLQueries.TR4_DEVFULLRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
 
-#Restore DIFF Backup
+#Restore DIFF Backup  
+Invoke-Sqlcmd2 -ServerInstance $Server -Database Master -Query $SQLQueries.TR4_DEVDIFFRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
 
 #CDC
 Invoke-Sqlcmd2 -ServerInstance $Server -Database -Query $SQLQueries.CDCQuery -QueryTimeout ([int]::MaxValue) -Verbose

@@ -40,11 +40,15 @@ $SQLQueries = @{
 "@
 
     TR4_DEVShrinkLogScript = @"
-    ALTER DATABASE TR4_DEV SET RECOVERY SIMPLE
+    ALTER DATABASE $DevDatabase SET RECOVERY SIMPLE
     DBCC SHRINKFILE('Tr@veller_Log', 3024)
 "@
-}
 
+    ChangeDefaultCursortoGLOBAL = @"
+    ALTER DATABASE $DevDatabase SET CURSOR_DEFAULT  GLOBAL WITH NO_WAIT
+"@
+  
+}
 
 
 
@@ -141,6 +145,9 @@ Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $TR4Dev
 
 #Setup Traveller Access
 Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $TR4DevSetupTravellerAcess -QueryTimeout ([int]::MaxValue) -Verbose
+
+#ChangeDefaultCursortoGLOBAL
+Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $SQLQueries.ChangeDefaultCursortoGLOBAL -QueryTimeout ([int]::MaxValue) -Verbose
 
 
 #Backup Destinations on the SDLC Dev Server

@@ -2,7 +2,7 @@ $Server = 'WERCOVRDEVSQLD1'
 $DevDatabase = 'TR4_DEV'
 $Accounts = @{
     DBO       = 'TravellerAppTR4Dev', 'TravellerAppDev', 'BreaseAppDev', 'VRGUK\WebAppsUsers', 'VRGUK\WebsiteDataBuilder', 'VRGUK\SDLCQae', 'VRGUK\SDLCDev', 'macbuild'
-    ReadWrite = 'TravellerReportingDev', 'BabelDirectAppDEV', 'RCINJ\ctrq664', 'vrguk\sheenaHarrison', 'VRGUK\TR4_Developers', 'YMTSASUser', 'VRGUK\andrewtaylor', 'EpicPricingUpload', 'VRGUK\jeanbaptistetherasse', 'VRGUK\Finance_Trav_Reporting', 'VRGUK\douglaswatson', 'VRGUK\dianewebber', 'VRGUK\SDLCSQLAgentUAT', 'VRGUK\SDLCSQLAgentQAE'
+    ReadWrite = 'TravellerReportingDev', 'BabelDirectAppDEV', 'RCINJ\ctrq664', 'YMTSASUser', 'VRGUK\andrewtaylor', 'EpicPricingUpload', 'VRGUK\jeanbaptistetherasse', 'VRGUK\Finance_Trav_Reporting', 'VRGUK\douglaswatson', 'VRGUK\dianewebber', 'VRGUK\SDLCSQLAgentUAT', 'VRGUK\SDLCSQLAgentQAE'
     Read      = 'vrguk\earnpsql'
 }
 $TravellerLiveBackupLocation = @{
@@ -97,8 +97,17 @@ Invoke-Sqlcmd2 -ServerInstance $Server -Database Master -Query $SQLQueries.TR4_D
 Invoke-Sqlcmd2 -ServerInstance $Server -Database Master -Query $SQLQueries.TR4_DEVDIFFRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
 
 #CDC
-Invoke-Sqlcmd2 -ServerInstance $Server -Database -Query $SQLQueries.CDCQuery -QueryTimeout ([int]::MaxValue) -Verbose
+Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $SQLQueries.CDCQuery -QueryTimeout ([int]::MaxValue) -Verbose
 
+#Drop all database users
+$DBUsers = Get-DbaDatabaseUser $Server -Database $DevDatabase -ExcludeSystemUser |
+Where-Object -FilterScript { ($_.Name -notlike 'cdc') -or ($_.Name -notlike 'AutoTaskExecuter') }
+$DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $Server -Database $DevDatabase -User $_}
+
+
+$Accounts.DBO | ForEach-Object{New-DbaDbUser -SqlInstance $Server -Database $DevDatabase -Login $_ -Username $_} 
+$Accounts.ReadWrite | ForEach-Object{New-DbaDbUser -SqlInstance $Server -Database $DevDatabase -Login $_ -Username $_} 
+$Accounts.Read | ForEach-Object{New-DbaDbUser -SqlInstance $Server -Database $DevDatabase -Login $_ -Username $_} 
 
 #Backup Destinations on the SDLC Dev Server
 $SDLCDev39BackupFolder = "\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Fusion39Backups"

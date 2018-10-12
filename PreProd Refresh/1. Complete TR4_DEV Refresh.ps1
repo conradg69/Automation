@@ -1,6 +1,10 @@
 $Server = 'WERCOVRDEVSQLD1'
 $DevDatabase = 'TR4_DEV'
-
+$Accounts = @{
+    DBO       = 'TravellerAppTR4Dev', 'TravellerAppDev', 'BreaseAppDev', 'VRGUK\WebAppsUsers', 'VRGUK\WebsiteDataBuilder', 'VRGUK\SDLCQae', 'VRGUK\SDLCDev', 'macbuild'
+    ReadWrite = 'TravellerReportingDev', 'BabelDirectAppDEV', 'RCINJ\ctrq664', 'vrguk\sheenaHarrison', 'VRGUK\TR4_Developers', 'YMTSASUser', 'VRGUK\andrewtaylor', 'EpicPricingUpload', 'VRGUK\jeanbaptistetherasse', 'VRGUK\Finance_Trav_Reporting', 'VRGUK\douglaswatson', 'VRGUK\dianewebber', 'VRGUK\SDLCSQLAgentUAT', 'VRGUK\SDLCSQLAgentQAE'
+    Read      = 'vrguk\earnpsql'
+}
 $TravellerLiveBackupLocation = @{
     FULLBackup = '\\WERCOVRUATSQLD1\DBBackups4\TR4_LIVE\FULL'
     DIFFBackup = '\\WERCOVRUATSQLD1\DBBackups2\TR4_LIVE\LOG'  
@@ -9,7 +13,7 @@ $FULLBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.FULLB
 $DIFFBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.DIFFBackup -Filter "*.diff" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
 
 $SQLQueries = @{
-    CDCQuery = "EXEC sys.sp_cdc_add_job 'capture'"
+    CDCQuery                 = "EXEC sys.sp_cdc_add_job 'capture'"
     TR4_DEVFULLRestoreScript = @"
     Alter database $DevDatabase set single_user with rollback immediate 
     Alter database $DevDatabase set multi_user with rollback immediate 
@@ -24,7 +28,55 @@ $SQLQueries = @{
     REPLACE, NORECOVERY,  STATS = 5
 "@
 }
+<#
+#SORT THIS OUT
+/****** Object:  Schema [VRGUK\WebTeamReadOnly]    Script Date: 03/29/2015 22:53:09 ******/
+IF  EXISTS (SELECT * FROM sys.schemas WHERE name = N'VRGUK\WebTeamReadOnly')
+DROP SCHEMA [VRGUK\WebTeamReadOnly]
+GO
 
+
+Also find a way to add this or check if it's actuallt still needed
+IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'DataLink_GoldmineTraveller')
+BEGIN
+	CREATE USER DataLink_GoldmineTraveller FOR LOGIN DataLink_GoldmineTraveller WITH DEFAULT_SCHEMA = dbo
+--	EXEC sp_addrolemember N'db_datareader', N'DataLink_GoldmineTraveller'
+	EXEC sp_addrolemember N'db_denydatawriter', N'DataLink_GoldmineTraveller'
+	grant select on Attribute to DataLink_GoldmineTraveller
+grant select on Feature to DataLink_GoldmineTraveller
+grant select on HosServiceExtras to DataLink_GoldmineTraveller
+grant select on HosSupplierExtras to DataLink_GoldmineTraveller
+grant select on HosUnitExtras to DataLink_GoldmineTraveller
+grant select on KeyHolder to DataLink_GoldmineTraveller
+grant select on Service to DataLink_GoldmineTraveller
+grant select on Supplier to DataLink_GoldmineTraveller
+grant select on Thg_SupplierGeoLocationDetail to DataLink_GoldmineTraveller
+grant select on Unit to DataLink_GoldmineTraveller
+
+CREATE USER [VRGUK\dianewebber] FOR LOGIN [VRGUK\dianewebber]
+		EXEC sp_addrolemember N'db_datareader', N'VRGUK\dianewebber'
+		EXEC sp_addrolemember N'db_denydatawriter', N'VRGUK\dianewebber'	
+		GRANT EXECUTE ON SCHEMA::dbo TO [VRGUK\dianewebber]
+        GRANT showplan to [VRGUK\dianewebber]
+        
+CREATE USER [VRGUK\douglaswatson] FOR LOGIN [VRGUK\douglaswatson]
+		EXEC sp_addrolemember N'db_datareader', N'VRGUK\douglaswatson'
+		EXEC sp_addrolemember N'db_denydatawriter', N'VRGUK\douglaswatson'	
+		GRANT EXECUTE ON SCHEMA::dbo TO [VRGUK\douglaswatson]
+        GRANT showplan to [VRGUK\douglaswatson]
+        
+CREATE USER [VRGUK\SDLCSQLAgentUAT] FOR LOGIN [VRGUK\SDLCSQLAgentUAT]
+		EXEC sp_addrolemember N'db_datareader', N'VRGUK\SDLCSQLAgentUAT'
+		EXEC sp_addrolemember N'db_denydatawriter', N'VRGUK\SDLCSQLAgentUAT'	
+		GRANT EXECUTE ON SCHEMA::dbo TO [VRGUK\SDLCSQLAgentUAT]
+        GRANT showplan to [VRGUK\SDLCSQLAgentUAT]
+       
+CREATE USER [VRGUK\SDLCSQLAgentQAE] FOR LOGIN [VRGUK\SDLCSQLAgentQAE]
+		EXEC sp_addrolemember N'db_datareader', N'VRGUK\SDLCSQLAgentQAE'
+		EXEC sp_addrolemember N'db_denydatawriter', N'VRGUK\SDLCSQLAgentQAE'	
+		GRANT EXECUTE ON SCHEMA::dbo TO [VRGUK\SDLCSQLAgentQAE]
+		GRANT showplan to [VRGUK\SDLCSQLAgentQAE]
+#>
 
 #Restore FULL Backup
 Invoke-Sqlcmd2 -ServerInstance $Server -Database Master -Query $SQLQueries.TR4_DEVFULLRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose

@@ -12,6 +12,8 @@ $TravellerLiveBackupLocation = @{
 $FULLBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.FULLBackup -Filter "*.bak" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
 $DIFFBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.DIFFBackup -Filter "*.diff" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
 
+$TR4DevSetupSanitise = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\TR4DevSetup&Sanitise.sql'
+
 $SQLQueries = @{
     CDCQuery                 = "EXEC sys.sp_cdc_add_job 'capture'"
     TR4_DEVFULLRestoreScript = @"
@@ -34,6 +36,11 @@ $SQLQueries = @{
     WITH  RECOVERY, KEEP_CDC, STATS = 5  
 
     ALTER DATABASE $DevDatabase SET RECOVERY SIMPLE
+"@
+
+    TR4_DEVShrinkLogScript = @"
+    ALTER DATABASE TR4_DEV SET RECOVERY SIMPLE
+    DBCC SHRINKFILE('Tr@veller_Log', 3024)
 "@
 }
 
@@ -104,10 +111,35 @@ $DBUsers = Get-DbaDatabaseUser $Server -Database $DevDatabase -ExcludeSystemUser
 Where-Object -FilterScript { ($_.Name -notlike 'cdc') -or ($_.Name -notlike 'AutoTaskExecuter') }
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $Server -Database $DevDatabase -User $_}
 
-
+#Add Accounts
 $Accounts.DBO | ForEach-Object{New-DbaDbUser -SqlInstance $Server -Database $DevDatabase -Login $_ -Username $_} 
 $Accounts.ReadWrite | ForEach-Object{New-DbaDbUser -SqlInstance $Server -Database $DevDatabase -Login $_ -Username $_} 
 $Accounts.Read | ForEach-Object{New-DbaDbUser -SqlInstance $Server -Database $DevDatabase -Login $_ -Username $_} 
+
+#Add account to the DBO role
+$Accounts.DBO | ForEach-Object{
+    $GrantDBOPermissions = @"
+    EXEC sp_addrolemember N'db_owner', N'$_'
+"@
+    Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $GrantDBOPermissions
+}
+#Add account to the READ\Write role
+$Accounts.ReadWrite | ForEach-Object{
+    $GrantReadWritePermissions = @"
+    EXEC sp_addrolemember N'db_datareader', N'$_'
+	EXEC sp_addrolemember N'db_denydatawriter', N'$_'
+"@
+    Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $GrantReadWritePermissions
+}
+
+
+
+#Shrink Log
+Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $SQLQueries.TR4_DEVShrinkLogScript -QueryTimeout ([int]::MaxValue) -Verbose
+
+#Setup and Sanitise Traveller
+Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $TR4DevSetupSanitise -QueryTimeout ([int]::MaxValue) -Verbose
+
 
 #Backup Destinations on the SDLC Dev Server
 $SDLCDev39BackupFolder = "\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Fusion39Backups"

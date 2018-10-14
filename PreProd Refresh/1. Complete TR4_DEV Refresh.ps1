@@ -15,7 +15,7 @@ $DIFFBackupFileDetails = (Get-ChildItem -Path $TravellerLiveBackupLocation.DIFFB
 $TR4DevSetupSanitise = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\TR4DevSetup&Sanitise.sql'
 $TR4DevSetupTravellerAcess = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\SetupTravellerAccess.sql'
 $UpdateSYNONYMs = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\UpdateSynonyms.sql'
-$LoadCLR = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\CLR.sql'
+$CLR = '\\Wercovrdevsqld1\ps\SQLRefreshJobs\TR4Dev\CLR.sql'
 
 $SQLQueries = @{
     CDCQuery                 = "EXEC sys.sp_cdc_add_job 'capture'"
@@ -107,6 +107,8 @@ CREATE USER [VRGUK\SDLCSQLAgentQAE] FOR LOGIN [VRGUK\SDLCSQLAgentQAE]
 #Restore FULL Backup
 Invoke-Sqlcmd2 -ServerInstance $Server -Database Master -Query $SQLQueries.TR4_DEVFULLRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
 
+Write-Host '*********FULL BACKUP COMPLETE***************' 
+Write-Host '*********DIFF BACKUP Stared***************'
 #Restore DIFF Backup  
 Invoke-Sqlcmd2 -ServerInstance $Server -Database Master -Query $SQLQueries.TR4_DEVDIFFRestoreScript -QueryTimeout ([int]::MaxValue) -Verbose
 
@@ -115,8 +117,10 @@ Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $SQLQueries
 
 #Drop all database users
 $DBUsers = Get-DbaDatabaseUser $Server -Database $DevDatabase -ExcludeSystemUser |
-Where-Object -FilterScript { ($_.Name -notlike 'cdc') -or ($_.Name -notlike 'AutoTaskExecuter') }
+Where-Object { ($_.Name -ne 'cdc') | Where-Object($_.Name -ne 'AutoTaskExecuter') }
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $Server -Database $DevDatabase -User $_}
+
+Get-DbaDatabaseUser $Server -Database $DevDatabase  | Where-Object { ($_.Name -ne 'cdc') | Where-Object($_.Name -ne 'AutoTaskExecuter') }
 
 #Add Accounts
 $Accounts.DBO | ForEach-Object{New-DbaDbUser -SqlInstance $Server -Database $DevDatabase -Login $_ -Username $_} 
@@ -155,7 +159,7 @@ Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $SQLQueries
 Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $UpdateSYNONYMs -QueryTimeout ([int]::MaxValue) -Verbose
 
 #Load CLR
-Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $LoadCLR -QueryTimeout ([int]::MaxValue) -Verbose
+Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -InputFile $CLR -QueryTimeout ([int]::MaxValue) -Verbose
 
 
 

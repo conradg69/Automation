@@ -117,10 +117,8 @@ Invoke-Sqlcmd2 -ServerInstance $Server -Database $DevDatabase -Query $SQLQueries
 
 #Drop all database users
 $DBUsers = Get-DbaDatabaseUser $Server -Database $DevDatabase -ExcludeSystemUser |
-Where-Object { ($_.Name -ne 'cdc') | Where-Object($_.Name -ne 'AutoTaskExecuter') }
+Where-Object -FilterScript {$_.Name -ne 'cdc'} | Where-Object {$_.Name -ne 'AutoTaskExecuter'}
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $Server -Database $DevDatabase -User $_}
-
-Get-DbaDatabaseUser $Server -Database $DevDatabase  | Where-Object { ($_.Name -ne 'cdc') | Where-Object($_.Name -ne 'AutoTaskExecuter') }
 
 #Add Accounts
 $Accounts.DBO | ForEach-Object{New-DbaDbUser -SqlInstance $Server -Database $DevDatabase -Login $_ -Username $_} 

@@ -16,19 +16,28 @@ $Folder = @{
 }
 
 $CurrentDateTime = Get-Date -Format FileDateTime 
-$DateTimeFormatted = $CurrentDateTime.Substring(0,13)
+$DateTimeFormatted = $CurrentDateTime.Substring(0, 13)
+
 $QAEBackupFolder = "$BreaseQAEFolder-$DateTimeFormatted"
+
 $Path = '\'
 $DownloadFolder = @{
-    Root = $Folder.ReportBackups + $Folder.BreaseBackupFinanceQAE + $Path + $Folder.BackupName + "-$DateTimeFormatted"
-    SelectorReports = $DownloadFolder.Root + $Path + $Folder.SelectorReports
-    DetailReports   = $DownloadFolder.Root + $Path + $Folder.DetailReports
+    Root                = $Folder.ReportBackups + $Folder.BreaseBackupFinanceQAE + $Path + $Folder.BackupName + "-$DateTimeFormatted"
+    SelectorReports     = $DownloadFolder.Root + $Path + $Folder.SelectorReports
+    DetailReports       = $DownloadFolder.Root + $Path + $Folder.DetailReports
     LiveSelectorReports = $DownloadFolder.Root + $Path + 'Live ' + $Folder.SelectorReports
     LiveDetailReports   = $DownloadFolder.Root + $Path + 'Live ' + $Folder.DetailReports
-    SSRSDetails     = $Folder.BreaseFinanceQAE + $Folder.DetailReports 
-    SSRSSelector    = $Folder.BreaseFinanceQAE + $Folder.SelectorReports 
+    SSRSDetails         = $Folder.BreaseFinanceQAE + $Folder.DetailReports 
+    SSRSSelector        = $Folder.BreaseFinanceQAE + $Folder.SelectorReports 
     LiveSSRSDetails     = $Folder.BreaseLive + $Folder.DetailReports 
     LiveSSRSSelector    = $Folder.BreaseLive + $Folder.SelectorReports     
+}
+
+$UploadFolder = @{
+    Root                = $Folder.BreaseBackupFinanceQAE + "-$DateTimeFormatted"
+    RootPlusDatedFolder = $Folder.Backup + '/' + $Folder.BreaseBackupFinanceQAE + "-$DateTimeFormatted"
+    SelectorReports     = $Folder.BackupName + "-$DateTimeFormatted" + '/' + $Folder.SelectorReports
+
 }
 
 #Check and create folders to download the reports - Backup Current QAE Finance Reports
@@ -42,20 +51,66 @@ write-host 'Downloading Detail Reports'
 #Download all Detail Report RDL files to a Folder 
 Get-RsFolderContent -ReportServerUri $ReportServer.QAE -RsFolder $DownloadFolder.SSRSDetails |  Where-Object TypeName -eq 'Report' |
     Select-Object -ExpandProperty Path |
-    Out-RsCatalogItem -ReportServerUri $ReportServer.QAE -Destination $DownloadFolder.DetailReports 
+    Out-RsCatalogItem -ReportServerUri $ReportServer.QAE -Destination $DownloadFolder.DetailReports  -Verbose
 
 write-host 'Downloading Selector Reports'
 #Download all Selector Report RDL files to a Folder 
 Get-RsFolderContent -ReportServerUri $ReportServer.QAE -RsFolder $DownloadFolder.SSRSSelector |  Where-Object TypeName -eq 'Report' |
     Select-Object -ExpandProperty Path |
-    Out-RsCatalogItem -ReportServerUri $reportServerUriDest -Destination $DownloadFolder.SelectorReports
+    Out-RsCatalogItem -ReportServerUri $ReportServer.QAE -Destination $DownloadFolder.SelectorReports -Verbose
 
 
 write-host 'Downloading Live Detail Reports'
 #Download all Live Detail Report RDL files to a Folder 
 Get-RsFolderContent -ReportServerUri $ReportServer.Live -RsFolder $DownloadFolder.LiveSSRSDetails |  Where-Object TypeName -eq 'Report' |
     Select-Object -ExpandProperty Path |
-    Out-RsCatalogItem -ReportServerUri $ReportServer.Live -Destination $DownloadFolder.LiveDetailReports
+    Out-RsCatalogItem -ReportServerUri $ReportServer.Live -Destination $DownloadFolder.LiveDetailReports -Verbose
+
+write-host 'Downloading Live Selector Reports'
+#Download all Selector Report RDL files to a Folder 
+Get-RsFolderContent -ReportServerUri $ReportServer.Live -RsFolder $DownloadFolder.LiveSSRSSelector |  Where-Object TypeName -eq 'Report' |
+    Select-Object -ExpandProperty Path |
+    Out-RsCatalogItem -ReportServerUri $ReportServer.Live -Destination $DownloadFolder.LiveSelectorReports -Verbose
+
+
+
+#Move Reports that need to be manually uploaded to the a separate folder
+Get-ChildItem -Path $DownloadFolder.LiveDetailReports  -Recurse -Filter "*[*" | Remove-Item
+Get-ChildItem -Path $DownloadFolder.LiveDetailReports  -Recurse -Filter "*WebAppsTest*" | Remove-Item
+Get-ChildItem -Path $DownloadFolder.DetailReports   -Recurse -Filter "*[*" | Remove-Item
+Get-ChildItem -Path $DownloadFolder.DetailReports   -Recurse -Filter "*WebAppsTest*" | Remove-Item
+
+
+#Remove-RsCatalogItem -ReportServerUri $ReportServer.QAE -RsItem '/BreaseReportBackups' -Confirm:$false 
+#Remove-RsCatalogItem -ReportServerUri $reportServerUriDest -RsItem "$RootFolderPath$BreaseQAEFolderSSRS/$DetailReportsFolder" -Confirm:$false 
+
+write-host 'Creating SSRS Folders'
+#create SSRS Folders
+#New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder "/" -FolderName 'BreaseReportBackups'
+New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $Folder.Backup -FolderName $UploadFolder.Root
+New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $UploadFolder.RootPlusDatedFolder -FolderName $Folder.DetailReports
+New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $UploadFolder.RootPlusDatedFolder -FolderName $Folder.SelectorReports
+
+$DetailReportUpload = $UploadFolder.RootPlusDatedFolder + '/' + $Folder.DetailReports
+$SelectorReportUpload = $UploadFolder.RootPlusDatedFolder + '/' + $Folder.SelectorReports
+
+write-host 'Uploading Detail Reports - Backups'
+#Upload all Detail Reports from the download folder
+Write-RsFolderContent -ReportServerUri $ReportServer.QAE  -Path $DownloadFolder.DetailReports -RsFolder $DetailReportUpload -Overwrite
+
+write-host 'Uploading Selector Reports - Backups'
+#Upload all Selector Reports from the download folder
+Write-RsFolderContent -ReportServerUri $ReportServer.QAE  -Path $DownloadFolder.SelectorReports -RsFolder $SelectorReportUpload -Overwrite
+
+
+<#
+New-RsFolder -ReportServerUri $reportServerUriDest -RsFolder "$RootBackupFolderPath/$QAEBackupFolder" -FolderName $SelectorReportsFolder
+#New-RsFolder -ReportServerUri $reportServerUriDest -RsFolder $RootFolderPath -FolderName $BreaseQAEFolderSSRS
+New-RsFolder -ReportServerUri $reportServerUriDest -RsFolder "$RootFolderPath$BreaseQAEFolderSSRS" -FolderName $DetailReportsFolder
+New-RsFolder -ReportServerUri $reportServerUriDest -RsFolder "$RootFolderPath$BreaseQAEFolderSSRS" -FolderName $SelectorReportsFolder
+
+
+
 
 $downloadFolderDetailReports = "$Folder.ReportBackups\TR4_QAEFinance\$DetailReportsFolder $DateTimeFormatted"
 $downloadFolderSelectorReports = "H:\SSRSBackupRefresh\ReportBackups\TR4_QAEFinance\Selector Reports $DateTimeFormatted"
@@ -66,33 +121,6 @@ $TR4_QAERootFolder = 'H:\SSRSBackupRefresh\ReportBackups\TR4_QAEFinance'
 #$BreaseQAEFolderSSRS = 'Brease_FinanceQAE'
 
 
-
-#Create Brease  Folders for the RDL files
-New-Item -Path $downloadFolderDetailReports -ItemType directory 
-New-Item -Path $downloadFolderSelectorReports -ItemType directory 
-New-Item -Path $downloadFolderLiveDetailReports -ItemType directory
-New-Item -Path $downloadFolderLiveSelectorReports -ItemType directory
-
-
-
-
-
-
-
-write-host 'Downloading Live Selector Reports'
-#Download all Selector Report RDL files to a Folder 
-Get-RsFolderContent -ReportServerUri $reportServerUriLive -RsFolder "/Brease/$SelectorReportsFolder" |  Where-Object TypeName -eq 'Report' |
-    Select-Object -ExpandProperty Path |
-    Out-RsCatalogItem -ReportServerUri $reportServerUriLive -Destination $downloadFolderLiveSelectorReports
-
-#Move Reports that need to be manually uploaded to the a separate folder
-Get-ChildItem -Path $downloadFolderLiveDetailReports  -Recurse -Filter "*[*" | Remove-Item
-Get-ChildItem -Path $downloadFolderLiveDetailReports  -Recurse -Filter "*WebAppsTest*" | Remove-Item
-Get-ChildItem -Path $downloadFolderDetailReports  -Recurse -Filter "*[*" | Remove-Item
-Get-ChildItem -Path $downloadFolderDetailReports  -Recurse -Filter "*WebAppsTest*" | Remove-Item
-
-Remove-RsCatalogItem -ReportServerUri $reportServerUriDest -RsItem "$RootFolderPath$BreaseQAEFolderSSRS/$SelectorReportsFolder" -Confirm:$false 
-Remove-RsCatalogItem -ReportServerUri $reportServerUriDest -RsItem "$RootFolderPath$BreaseQAEFolderSSRS/$DetailReportsFolder" -Confirm:$false 
 
 write-host 'Creating SSRS Folders'
 #create SSRS Folders
@@ -183,3 +211,5 @@ $BackedUpSelectorReports | Where-Object TypeName -eq 'Report' | ForEach-Object {
         Write-Warning "Report $($_.Path) does not contain an datasource"
     }
 }
+
+#>

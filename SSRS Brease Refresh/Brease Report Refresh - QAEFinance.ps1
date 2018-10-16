@@ -1,16 +1,39 @@
-$reportServerUriLive = 'http://thgdocuments/Reportserver'
-$reportServerUriDest = 'http://wercovrqaesqld1/Reportserver'
-$RootFolderPath = "/"
-$RootBackupFolderName = 'BreaseReportBackups'
-$RootBackupFolderPath = "$RootFolderPath$RootBackupFolderName"
-$BreaseQAEFolder = 'TR4_QAEFinance'
-$BreaseQAEFolderSSRS = 'Brease_FinanceQAE'
+$ReportServer = @{
+    Live = 'http://thgdocuments/Reportserver'
+    QAE  = 'http://wercovrqaesqld1/Reportserver'
+}
+
+$Folder = @{
+    Backup                 = '/BreaseReportBackups'
+    BreaseBackupFinanceQAE = 'TR4_QAEFinance'
+    BreaseFinanceQAE       = 'Brease_FinanceQAE'
+    DetailReports          = "Detail Reports"
+    SelectorReports        = "Selector Reports"
+    ReportBackups          = "\\WERCOVRQAESQLD1\SSRSBackupRefresh\ReportBackups\"
+    BackupName             = 'ReportBackups'
+}
+
 $CurrentDateTime = Get-Date -Format FileDateTime 
 $DateTimeFormatted = $CurrentDateTime.Substring(0,13)
 $QAEBackupFolder = "$BreaseQAEFolder-$DateTimeFormatted"
-$DetailReportsFolder = "Detail Reports"
-$SelectorReportsFolder = "Selector Reports"
-$downloadFolderDetailReports = "H:\SSRSBackupRefresh\ReportBackups\TR4_QAEFinance\$DetailReportsFolder $DateTimeFormatted"
+$Path = '\'
+$DownloadFolder = @{
+    Root = $Folder.ReportBackups + $Folder.BreaseBackupFinanceQAE + $Path + $Folder.BackupName + "-$DateTimeFormatted"
+    SelectorReports = $DownloadFolder.Root + $Path + $Folder.SelectorReports
+    DetailReports = $DownloadFolder.Root + $Path + $Folder.DetailReports
+}
+
+#Check and create folders to download the reports - Backup Current QAE Finance Reports
+if (-not(Test-Path -Path $DownloadFolder.SelectorReports)) {New-Item -Path $DownloadFolder.SelectorReports -ItemType Directory}
+if (-not(Test-Path -Path $DownloadFolder.DetailReports)) {New-Item -Path $DownloadFolder.DetailReports -ItemType Directory}
+
+write-host 'Downloading Detail Reports'
+#Download all Detail Report RDL files to a Folder 
+Get-RsFolderContent -ReportServerUri $ReportServer.QAE -RsFolder "$RootFolderPath$BreaseQAEFolderSSRS/$DetailReportsFolder" |  Where-Object TypeName -eq 'Report' |
+    Select-Object -ExpandProperty Path |
+    Out-RsCatalogItem -ReportServerUri $reportServerUriDest -Destination $downloadFolderDetailReports 
+
+$downloadFolderDetailReports = "$Folder.ReportBackups\TR4_QAEFinance\$DetailReportsFolder $DateTimeFormatted"
 $downloadFolderSelectorReports = "H:\SSRSBackupRefresh\ReportBackups\TR4_QAEFinance\Selector Reports $DateTimeFormatted"
 $downloadFolderLiveDetailReports = "H:\SSRSBackupRefresh\ReportBackups\TR4_QAEFinance\Live $DetailReportsFolder $DateTimeFormatted"
 $downloadFolderLiveSelectorReports = "H:\SSRSBackupRefresh\ReportBackups\TR4_QAEFinance\Live $SelectorReportsFolder $DateTimeFormatted"
@@ -18,17 +41,15 @@ $DataSourcePath2 = "/Brease_FinanceQAE/DataSources/Brease_FinanceQAE"
 $TR4_QAERootFolder = 'H:\SSRSBackupRefresh\ReportBackups\TR4_QAEFinance'
 #$BreaseQAEFolderSSRS = 'Brease_FinanceQAE'
 
+
+
 #Create Brease  Folders for the RDL files
 New-Item -Path $downloadFolderDetailReports -ItemType directory 
 New-Item -Path $downloadFolderSelectorReports -ItemType directory 
 New-Item -Path $downloadFolderLiveDetailReports -ItemType directory
 New-Item -Path $downloadFolderLiveSelectorReports -ItemType directory
 
-write-host 'Downloading Detail Reports'
-#Download all Detail Report RDL files to a Folder 
-Get-RsFolderContent -ReportServerUri $reportServerUriDest -RsFolder "$RootFolderPath$BreaseQAEFolderSSRS/$DetailReportsFolder" |  Where-Object TypeName -eq 'Report' |
-    Select-Object -ExpandProperty Path |
-    Out-RsCatalogItem -ReportServerUri $reportServerUriDest -Destination $downloadFolderDetailReports 
+
 
 write-host 'Downloading Selector Reports'
 #Download all Selector Report RDL files to a Folder 

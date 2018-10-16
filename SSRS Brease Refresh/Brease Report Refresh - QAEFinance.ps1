@@ -1,6 +1,7 @@
 $ReportServer = @{
     Live = 'http://thgdocuments/Reportserver'
     QAE  = 'http://wercovrqaesqld1/Reportserver'
+    DataSourcePath = "/Brease_FinanceQAE/DataSources/Brease_FinanceQAE"
 }
 
 $Folder = @{
@@ -102,6 +103,35 @@ write-host 'Uploading Selector Reports - Backups'
 #Upload all Selector Reports from the download folder
 Write-RsFolderContent -ReportServerUri $ReportServer.QAE  -Path $DownloadFolder.SelectorReports -RsFolder $SelectorReportUpload -Overwrite
 
+
+write-host 'Updating DataSourses - Backed Up Selector Reports'
+$BackedUpSelectorReports = Get-RsCatalogItems -ReportServerUri $ReportServer.QAE -RsFolder $SelectorReportUpload
+# Set report datasource
+$BackedUpSelectorReports | Where-Object TypeName -eq 'Report' | ForEach-Object {
+    $dataSource = Get-RsItemDataSource -ReportServerUri $ReportServer.QAE -RsItem $_.Path
+    if ($dataSource -ne $null) {
+        Set-RsDataSourceReference -ReportServerUri $ReportServer.QAE -Path $_.Path -DataSourceName $dataSource.Name -DataSourcePath $ReportServer.DataSourcePath
+        Write-Output "Changed datasource $($dataSource.Name) set to $DataSourcePath2 on report $($_.Path) "
+    }
+    else {
+        Write-Warning "Report $($_.Path) does not contain an datasource"
+    }
+}
+
+
+write-host 'Updating DataSourses - Backed Up Detail Reports'
+$BackedUpSelectorReports = Get-RsCatalogItems -ReportServerUri $ReportServer.QAE -RsFolder $DetailReportUpload
+# Set report datasource
+$BackedUpSelectorReports | Where-Object TypeName -eq 'Report' | ForEach-Object {
+    $dataSource = Get-RsItemDataSource -ReportServerUri $ReportServer.QAE -RsItem $_.Path
+    if ($dataSource -ne $null) {
+        Set-RsDataSourceReference -ReportServerUri $ReportServer.QAE -Path $_.Path -DataSourceName $dataSource.Name -DataSourcePath $ReportServer.DataSourcePath
+        Write-Output "Changed datasource $($dataSource.Name) set to $DataSourcePath2 on report $($_.Path) "
+    }
+    else {
+        Write-Warning "Report $($_.Path) does not contain an datasource"
+    }
+}
 
 <#
 New-RsFolder -ReportServerUri $reportServerUriDest -RsFolder "$RootBackupFolderPath/$QAEBackupFolder" -FolderName $SelectorReportsFolder

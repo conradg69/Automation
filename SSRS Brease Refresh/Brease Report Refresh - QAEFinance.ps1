@@ -13,21 +13,18 @@ $Folder = @{
     SelectorReports        = "Selector Reports"
     ReportBackups          = "\\WERCOVRQAESQLD1\SSRSBackupRefresh\ReportBackups\"
     BackupName             = 'ReportBackups'
-
 }
 
 $CurrentDateTime = Get-Date -Format FileDateTime 
 $DateTimeFormatted = $CurrentDateTime.Substring(0, 13)
-
-$QAEBackupFolder = "$BreaseQAEFolder-$DateTimeFormatted"
-
+$Root                = $Folder.ReportBackups + $Folder.BreaseBackupFinanceQAE + $Path + $Folder.BackupName + "-$DateTimeFormatted"
 $Path = '\'
 $DownloadFolder = @{
     Root                = $Folder.ReportBackups + $Folder.BreaseBackupFinanceQAE + $Path + $Folder.BackupName + "-$DateTimeFormatted"
-    SelectorReports     = $DownloadFolder.Root + $Path + $Folder.SelectorReports
-    DetailReports       = $DownloadFolder.Root + $Path + $Folder.DetailReports
-    LiveSelectorReports = $DownloadFolder.Root + $Path + 'Live ' + $Folder.SelectorReports
-    LiveDetailReports   = $DownloadFolder.Root + $Path + 'Live ' + $Folder.DetailReports
+    SelectorReports     = $Root + $Path + $Folder.SelectorReports
+    DetailReports       = $Root + $Path + $Folder.DetailReports
+    LiveSelectorReports = $Root + $Path + 'Live ' + $Folder.SelectorReports
+    LiveDetailReports   = $Root + $Path + 'Live ' + $Folder.DetailReports
     SSRSDetails         = $Folder.BreaseFinanceQAE + $Folder.DetailReports 
     SSRSSelector        = $Folder.BreaseFinanceQAE + $Folder.SelectorReports 
     LiveSSRSDetails     = $Folder.BreaseLive + $Folder.DetailReports 

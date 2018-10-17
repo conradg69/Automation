@@ -7,7 +7,7 @@ $ReportServer = @{
 $Folder = @{
     Backup                 = '/BreaseReportBackups'
     BreaseBackupFinanceQAE = 'TR4_QAEFinance'
-    BreaseFinanceQAE       = '/Brease_FinanceQAE/'
+    BreaseFinanceQAE       = '/Brease_FinanceQAE'
     BreaseLive             = '/Brease/'
     DetailReports          = "Detail Reports"
     SelectorReports        = "Selector Reports"
@@ -25,18 +25,25 @@ $DownloadFolder = @{
     DetailReports       = $Root + $Path + $Folder.DetailReports
     LiveSelectorReports = $Root + $Path + 'Live ' + $Folder.SelectorReports
     LiveDetailReports   = $Root + $Path + 'Live ' + $Folder.DetailReports
-    SSRSDetails         = $Folder.BreaseFinanceQAE + $Folder.DetailReports 
-    SSRSSelector        = $Folder.BreaseFinanceQAE + $Folder.SelectorReports 
+    SSRSDetails         = $Folder.BreaseFinanceQAE + '/' + $Folder.DetailReports 
+    SSRSSelector        = $Folder.BreaseFinanceQAE + '/' + $Folder.SelectorReports 
     LiveSSRSDetails     = $Folder.BreaseLive + $Folder.DetailReports 
     LiveSSRSSelector    = $Folder.BreaseLive + $Folder.SelectorReports     
 }
 
 $UploadFolder = @{
-    Root                = $Folder.BreaseBackupFinanceQAE + "-$DateTimeFormatted"
-    RootPlusDatedFolder = $Folder.Backup + '/' + $Folder.BreaseBackupFinanceQAE + "-$DateTimeFormatted"
-    SelectorReports     = $Folder.BackupName + "-$DateTimeFormatted" + '/' + $Folder.SelectorReports
+    Root                    = $Folder.BreaseBackupFinanceQAE + "-$DateTimeFormatted"
+    RootPlusDatedFolder     = $Folder.Backup + '/' + $Folder.BreaseBackupFinanceQAE + "-$DateTimeFormatted"
+    RootLivePlusDatedFolder = $Folder.BreaseFinanceQAE + '/' + $Folder.BreaseBackupFinanceQAE + "-$DateTimeFormatted"
+    SelectorReports         = $Folder.BackupName + "-$DateTimeFormatted" + '/' + $Folder.SelectorReports
 
 }
+
+$DetailReportUpload = $UploadFolder.RootPlusDatedFolder + '/' + $Folder.DetailReports
+$SelectorReportUpload = $UploadFolder.RootPlusDatedFolder + '/' + $Folder.SelectorReports
+$DetailQAEReportUpload = $Folder.BreaseFinanceQAE + '/' + $Folder.DetailReports
+$SelectorQAEReportUpload = $Folder.BreaseFinanceQAE + '/' + $Folder.SelectorReports
+
 
 #Check and create folders to download the reports - Backup Current QAE Finance Reports
 if (-not(Test-Path -Path $DownloadFolder.SelectorReports)) {New-Item -Path $DownloadFolder.SelectorReports -ItemType Directory}
@@ -79,9 +86,10 @@ Get-ChildItem -Path $DownloadFolder.DetailReports   -Recurse -Filter "*[*" | Rem
 Get-ChildItem -Path $DownloadFolder.DetailReports   -Recurse -Filter "*WebAppsTest*" | Remove-Item
 
 
-#Remove-RsCatalogItem -ReportServerUri $ReportServer.QAE -RsItem '/BreaseReportBackups' -Confirm:$false 
-#Remove-RsCatalogItem -ReportServerUri $reportServerUriDest -RsItem "$RootFolderPath$BreaseQAEFolderSSRS/$DetailReportsFolder" -Confirm:$false 
+Remove-RsCatalogItem -ReportServerUri $ReportServer.QAE -RsItem "$SelectorQAEReportUpload" -Confirm:$false 
+#Remove-RsCatalogItem -ReportServerUri $ReportServer.QAE -RsItem '/BreaseReportBackups/TR4_QAEFinance-20181017T1216' -Confirm:$false 
 
+#$SelectorQAEReportUpload
 write-host 'Creating SSRS Folders'
 #create SSRS Folders
 #New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder "/" -FolderName 'BreaseReportBackups'
@@ -89,8 +97,9 @@ New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $Folder.Backup -Folder
 New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $UploadFolder.RootPlusDatedFolder -FolderName $Folder.DetailReports
 New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $UploadFolder.RootPlusDatedFolder -FolderName $Folder.SelectorReports
 
-$DetailReportUpload = $UploadFolder.RootPlusDatedFolder + '/' + $Folder.DetailReports
-$SelectorReportUpload = $UploadFolder.RootPlusDatedFolder + '/' + $Folder.SelectorReports
+New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $Folder.BreaseFinanceQAE -FolderName $Folder.SelectorReports
+
+
 
 write-host 'Uploading Detail Reports - Backups'
 #Upload all Detail Reports from the download folder
@@ -100,6 +109,27 @@ write-host 'Uploading Selector Reports - Backups'
 #Upload all Selector Reports from the download folder
 Write-RsFolderContent -ReportServerUri $ReportServer.QAE  -Path $DownloadFolder.SelectorReports -RsFolder $SelectorReportUpload -Overwrite
 
+write-host 'Uploading Selector Reports'
+#Upload all Selector Reports from the download folder
+Write-RsFolderContent -ReportServerUri $ReportServer.QAE  -Path $DownloadFolder.LiveSelectorReports -RsFolder $SelectorQAEReportUpload -Overwrite
+
+write-host 'Uploading Detail Reports'
+#Upload all Selector Reports from the download folder
+Write-RsFolderContent -ReportServerUri $ReportServer.QAE  -Path $DownloadFolder.LiveDetailReports -RsFolder $DetailQAEReportUpload -Overwrite
+
+write-host 'Updating DataSourses - Selector Reports'
+$BackedUpSelectorReports = Get-RsCatalogItems -ReportServerUri $ReportServer.QAE -RsFolder $SelectorQAEReportUpload
+# Set report datasource
+$BackedUpSelectorReports | Where-Object TypeName -eq 'Report' | ForEach-Object {
+    $dataSource = Get-RsItemDataSource -ReportServerUri $ReportServer.QAE -RsItem $_.Path
+    if ($dataSource -ne $null) {
+        Set-RsDataSourceReference -ReportServerUri $ReportServer.QAE -Path $_.Path -DataSourceName $dataSource.Name -DataSourcePath $ReportServer.DataSourcePath
+        Write-Output "Changed datasource $($dataSource.Name) set to $DataSourcePath2 on report $($_.Path) "
+    }
+    else {
+        Write-Warning "Report $($_.Path) does not contain an datasource"
+    }
+}
 
 write-host 'Updating DataSourses - Backed Up Selector Reports'
 $BackedUpSelectorReports = Get-RsCatalogItems -ReportServerUri $ReportServer.QAE -RsFolder $SelectorReportUpload
@@ -123,12 +153,15 @@ $BackedUpSelectorReports | Where-Object TypeName -eq 'Report' | ForEach-Object {
     $dataSource = Get-RsItemDataSource -ReportServerUri $ReportServer.QAE -RsItem $_.Path
     if ($dataSource -ne $null) {
         Set-RsDataSourceReference -ReportServerUri $ReportServer.QAE -Path $_.Path -DataSourceName $dataSource.Name -DataSourcePath $ReportServer.DataSourcePath
-        Write-Output "Changed datasource $($dataSource.Name) set to $DataSourcePath2 on report $($_.Path) "
+        Write-Output "Changed datasource $($dataSource.Name) set to $dataSource.Name on report $($_.Path) "
     }
     else {
         Write-Warning "Report $($_.Path) does not contain an datasource"
     }
 }
+
+
+
 
 <#
 New-RsFolder -ReportServerUri $reportServerUriDest -RsFolder "$RootBackupFolderPath/$QAEBackupFolder" -FolderName $SelectorReportsFolder

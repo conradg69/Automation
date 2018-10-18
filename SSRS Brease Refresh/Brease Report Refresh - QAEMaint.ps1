@@ -97,11 +97,8 @@ write-host 'Creating SSRS Folders'
 New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $Folder.Backup -FolderName $UploadFolder.Root
 New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $UploadFolder.RootPlusDatedFolder -FolderName $Folder.DetailReports
 New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $UploadFolder.RootPlusDatedFolder -FolderName $Folder.SelectorReports
-
 New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $Folder.BreaseMaintenanceQAE -FolderName $Folder.SelectorReports
 New-RsFolder -ReportServerUri $ReportServer.QAE -RsFolder $Folder.BreaseMaintenanceQAE -FolderName $Folder.DetailReports
-
-
 
 write-host 'Uploading Detail Reports - Backups'
 #Upload all Detail Reports from the download folder

@@ -39,6 +39,7 @@ $UploadFolder = @{
 
 }
 
+#SSRS Folders
 $DetailReportUpload = $UploadFolder.RootPlusDatedFolder + '/' + $Folder.DetailReports
 $SelectorReportUpload = $UploadFolder.RootPlusDatedFolder + '/' + $Folder.SelectorReports
 $DetailQAEReportUpload = $Folder.BreaseFinanceQAE + '/' + $Folder.DetailReports

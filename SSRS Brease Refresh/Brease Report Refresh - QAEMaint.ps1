@@ -7,12 +7,12 @@ $ReportServer = @{
 $Folder = @{
     Backup                      = '/BreaseReportBackups'
     BreaseBackupMaintenanceQAE  = 'TR4_QAEMaintenance'
-    BreaseMaintenanceQAE            = '/Brease_MaintenanceQAE'
-    BreaseLive             = '/Brease/'
-    DetailReports          = "Detail Reports"
-    SelectorReports        = "Selector Reports"
-    ReportBackups          = "\\WERCOVRQAESQLD1\SSRSBackupRefresh\ReportBackups\"
-    BackupName             = 'ReportBackups'
+    BreaseMaintenanceQAE        = '/Brease_MaintenanceQAE'
+    BreaseLive                  = '/Brease/'
+    DetailReports               = "Detail Reports"
+    SelectorReports             = "Selector Reports"
+    ReportBackups               = "\\WERCOVRQAESQLD1\SSRSBackupRefresh\ReportBackups\"
+    BackupName                  = 'ReportBackups'
 }
 
 $CurrentDateTime = Get-Date -Format FileDateTime 

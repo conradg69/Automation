@@ -1,7 +1,19 @@
-$ReplicationScript = 'P:\PS\PreProd Refresh\DBBackups\Replication\TR4Dev_ILT_ReplicationExport.sql'
-$ReplicationScript2 = 'P:\PS\PreProd Refresh\DBBackups\Replication\Test1.sql'
-Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -Database TR4_DEV -File $ReplicationScript2 -Verbose
-Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -File $ReplicationScript2 -Verbose
+
+$DropReplicationScript = @"
+EXEC sp_dropsubscription 
+  @publication = N'pubFusionILTCache', 
+  @article = N'all',
+  @subscriber = 'WERCOVRDEVSQLD1';
+GO
+
+-- Remove a transactional publication.
+EXEC sp_droppublication @publication = N'pubFusionILTCache';
+"@
+Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -Database TR4_DEV -File $DropReplicationScript -Verbose
+
+$ReplicationScript = 'P:\PS\PreProd Refresh\DBBackups\Replication\Test1.sql'
+Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -Database TR4_DEV -File $ReplicationScript -Verbose
+
 
 $SubscriptionScript = @"
 exec sp_addsubscription @publication = N'pubFusionILTCache', @subscriber = N'WERCOVRDEVSQLD1', 
@@ -18,5 +30,10 @@ exec sp_addpushsubscription_agent @publication = N'pubFusionILTCache', @subscrib
 Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -Database TR4_DEV -Query $SubscriptionScript -Verbose
 
 $SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*pubFusionILTCache*")}
-$SQLJobs.name
+
 Start-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Job $SQLJobs.name
+
+
+
+
+

@@ -1,6 +1,7 @@
 $SDLC = @{
     DatabaseName = 'TR4_DEV'
     Server       = 'WERCOVRDEVSQLD1'
+    FusionILTCacheSearch = 'FusionILTCacheSearchDEV'
 }
 
 $DropReplicationScript = @"
@@ -26,6 +27,16 @@ exec sp_addpushsubscription_agent @publication = N'pubFusionILTCache', @subscrib
 @active_start_date = 0, @active_end_date = 0, @dts_package_location = N'Distributor'
 "@
 
+
+$ILTBookingTableIndex = @"
+CREATE NONCLUSTERED INDEX [IDXC_QuoteID_SID] ON [dbo].[Booking] 
+(
+	[QuoteID] ASC,
+	[SID] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+GO
+"@
+
 $ReplicationScript = '\\VLOPVRSTOAPP01\SQL_Backups_Traveller\TravellerScriptedObjects\Replication\Modified_TR4_Dev\TR4Dev_ILT_ReplicationExport.sql'
 
 #Drop the Current replication. Pulication and Subscribers
@@ -45,3 +56,5 @@ $PubName = $publication.PublicationName
 $SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where-Object {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*$PubName*")} 
 Start-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Job $SQLJobs.name -Verbose
 
+#Apply ILT Index
+Invoke-DbaSqlQuery -SqlInstance $SDLC.Server -Database $SDLC.FusionILTCacheSearch -Query $ILTBookingTableIndex -Verbose

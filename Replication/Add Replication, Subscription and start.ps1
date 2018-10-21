@@ -11,9 +11,9 @@ EXEC sp_droppublication @publication = N'pubFusionILTCache';
 "@
 Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -Database TR4_DEV -File $DropReplicationScript -Verbose
 
-$ReplicationScript = 'P:\PS\PreProd Refresh\DBBackups\Replication\Test1.sql'
-Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -Database TR4_DEV -File $ReplicationScript -Verbose
+$ReplicationScript = '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Replication\TR4Dev_ILT_ReplicationExport.sql'
 
+Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database TR4_DEV -InputFile $ReplicationScript 
 
 $SubscriptionScript = @"
 exec sp_addsubscription @publication = N'pubFusionILTCache', @subscriber = N'WERCOVRDEVSQLD1', 
@@ -27,11 +27,15 @@ exec sp_addpushsubscription_agent @publication = N'pubFusionILTCache', @subscrib
 @active_start_date = 0, @active_end_date = 0, @dts_package_location = N'Distributor'
 "@
 
-Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -Database TR4_DEV -Query $SubscriptionScript -Verbose
+Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database TR4_DEV -Query $SubscriptionScript -Verbose
 
-$SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*pubFusionILTCache*")}
 
-Start-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Job $SQLJobs.name
+$publication = Get-DbaRepPublication -SqlInstance WERCOVRDEVSQLD1 
+$PubName = $publication.PublicationName
+
+$SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*$PubName*")} 
+
+Start-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Job $SQLJobs.name -Verbose
 
 
 

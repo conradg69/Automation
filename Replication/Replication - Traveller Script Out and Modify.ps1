@@ -45,11 +45,3 @@ $ModifiedScript = "$ModifiedScriptFolder\TR4Dev_ILT_ReplicationExport.sql"
 (Get-Content $ModifiedScript).Replace("VRGUK\ProdSQLServerAgent", "VRGUK\SQL_DBA (Earby)") | Set-Content $ModifiedScript
 (Get-Content $ModifiedScript).Replace("VRGUK\ProdTRAVSQLAgentServ", "VRGUK\SQL_DBA (Earby)") | Set-Content $ModifiedScript
 
-
-
-
-
-
-
-
-

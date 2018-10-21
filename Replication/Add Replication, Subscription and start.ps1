@@ -26,15 +26,16 @@ exec sp_addpushsubscription_agent @publication = N'pubFusionILTCache', @subscrib
 @active_start_date = 0, @active_end_date = 0, @dts_package_location = N'Distributor'
 "@
 
+$ReplicationScript = '\\VLOPVRSTOAPP01\SQL_Backups_Traveller\TravellerScriptedObjects\Replication\Modified_TR4_Dev\TR4Dev_ILT_ReplicationExport.sql'
+
 #Drop the Current replication. Pulication and Subscribers
 Invoke-DbaSqlQuery -SqlInstance $SDLC.Server -Database $SDLC.DatabaseName -Query $DropReplicationScript -Verbose
 
 #Add Replication Publisher
-$ReplicationScript = '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Replication\TR4Dev_ILT_ReplicationExport.sql'
-Invoke-Sqlcmd2 -ServerInstance $SDLC.Server -Database $SDLC.DatabaseName -InputFile $ReplicationScript 
+Invoke-DbaSqlQuery -SqlInstance $SDLC.Server -Database $SDLC.DatabaseName -File $ReplicationScript -Verbose
 
 #Add Subscriber
-Invoke-Sqlcmd2 -ServerInstance $SDLC.Server -Database $SDLC.DatabaseName -Query $SubscriptionScript -Verbose
+Invoke-DbaSqlQuery -SqlInstance $SDLC.Server -Database $SDLC.DatabaseName -Query $SubscriptionScript -Verbose
 
 #Get Name of the Publication
 $publication = Get-DbaRepPublication -SqlInstance WERCOVRDEVSQLD1 

@@ -1,3 +1,7 @@
+$SDLC = @{
+    DatabaseName = 'TR4_DEV'
+    Server       = 'WERCOVRDEVSQLD1'
+}
 
 $DropReplicationScript = @"
 EXEC sp_dropsubscription 
@@ -9,11 +13,6 @@ GO
 -- Remove a transactional publication.
 EXEC sp_droppublication @publication = N'pubFusionILTCache';
 "@
-Invoke-DbaSqlQuery -SqlInstance WERCOVRDEVSQLD1 -Database TR4_DEV -File $DropReplicationScript -Verbose
-
-$ReplicationScript = '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Replication\TR4Dev_ILT_ReplicationExport.sql'
-
-Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database TR4_DEV -InputFile $ReplicationScript 
 
 $SubscriptionScript = @"
 exec sp_addsubscription @publication = N'pubFusionILTCache', @subscriber = N'WERCOVRDEVSQLD1', 
@@ -27,17 +26,21 @@ exec sp_addpushsubscription_agent @publication = N'pubFusionILTCache', @subscrib
 @active_start_date = 0, @active_end_date = 0, @dts_package_location = N'Distributor'
 "@
 
-Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database TR4_DEV -Query $SubscriptionScript -Verbose
+#Drop the Current replication. Pulication and Subscribers
+Invoke-DbaSqlQuery -SqlInstance $SDLC.Server -Database $SDLC.DatabaseName -Query $DropReplicationScript -Verbose
 
+#Add Replication Publisher
+$ReplicationScript = '\\WERCOVRDEVSQLD1\PreProd Refresh\DBBackups\Replication\TR4Dev_ILT_ReplicationExport.sql'
+Invoke-Sqlcmd2 -ServerInstance $SDLC.Server -Database $SDLC.DatabaseName -InputFile $ReplicationScript 
 
+#Add Subscriber
+Invoke-Sqlcmd2 -ServerInstance $SDLC.Server -Database $SDLC.DatabaseName -Query $SubscriptionScript -Verbose
+
+#Get Name of the Publication
 $publication = Get-DbaRepPublication -SqlInstance WERCOVRDEVSQLD1 
 $PubName = $publication.PublicationName
 
-$SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*$PubName*")} 
-
+#Start the Snapshot Agent
+$SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where-Object {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*$PubName*")} 
 Start-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Job $SQLJobs.name -Verbose
-
-
-
-
 

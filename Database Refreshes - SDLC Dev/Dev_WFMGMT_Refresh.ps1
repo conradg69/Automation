@@ -1,15 +1,20 @@
 $DatabaseName = 'WFMGMT'
 $BackupLocation = @{
-    LiveWFMGMT = '\\VLOPVRSTOAPP01\SQLBackups_BusApps\BUSAPPS\WFMGMT\FULL'
-    SDLCDevFolder = '\\WERCOVRDEVSQLD1\DBRefresh\ProdBackupFiles\WFMGMT'
+    LiveWFMGMT      = '\\VLOPVRSTOAPP01\SQLBackups_BusApps\BUSAPPS\WFMGMT\FULL'
+    SDLCDevFolder   = '\\WERCOVRDEVSQLD1\DBRefresh\ProdBackupFiles\WFMGMT'
 }
 $SDLC = @{
-    SQLInstance = 'WERCOVRDEVSQLD1'
-    DatabaseName = 'WFMGMT'
+    SQLInstance              = 'WERCOVRDEVSQLD1'
+    DatabaseName             = 'WFMGMT'
     DestinationDataDirectory = 'F:\SQLData'
-    DestinationLogDirectory = 'F:\SQLTLog'
+    DestinationLogDirectory  = 'F:\SQLTLog'
     
 }
+
+#Shrink database SQL script
+$ShrinkDatabase = @"
+    DBCC SHRINKDATABASE(N'$DatabaseName')
+"@
 
 #Create folder if not present
 if (-not(Test-Path -Path $BackupLocation.SDLCDevFolder)) {New-Item -ItemType directory -Path $BackupLocation.SDLCDevFolder}
@@ -44,10 +49,7 @@ Restore-DbaDatabase @restoreDbaDatabaseSplat
 $DBUsers = Get-DbaDatabaseUser $SDLC.SQLInstance -Database $SDLC.DatabaseName -ExcludeSystemUser 
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -User $_}
 
-#Shrink database
-$ShrinkDatabase = @"
-    DBCC SHRINKDATABASE(N'$DatabaseName')
-"@
+
 Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $ShrinkDatabase
 
 

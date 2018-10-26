@@ -1,4 +1,4 @@
-
+$DatabaseName = 'WFMGMT'
 $BackupLocation = @{
     LiveWFMGMT = '\\VLOPVRSTOAPP01\SQLBackups_BusApps\BUSAPPS\WFMGMT\FULL'
     SDLCDevFolder = '\\WERCOVRDEVSQLD1\DBRefresh\ProdBackupFiles\WFMGMT'
@@ -46,7 +46,7 @@ $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance 
 
 #Shrink database
 $ShrinkDatabase = @"
-    DBCC SHRINKDATABASE(N'WFMGMT')
+    DBCC SHRINKDATABASE(N'$DatabaseName')
 "@
 Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $ShrinkDatabase
 

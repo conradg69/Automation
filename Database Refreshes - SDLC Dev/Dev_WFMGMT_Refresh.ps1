@@ -1,16 +1,15 @@
 
 $BackupLocation = @{
-    FusionAvailabilityCache = '\\VLOPVRSTOAPP01\SQL_Backups_Traveller\TRAVELLERSQLCL\FusionAvailabilityCache\FULL'
-    SDLCDevFolder = '\\WERCOVRDEVSQLD1\DBRefresh\ProdBackupFiles\FusionAvailabilityCache'
+    LiveWFMGMT = '\\VLOPVRSTOAPP01\SQLBackups_BusApps\BUSAPPS\WFMGMT\FULL'
+    SDLCDevFolder = '\\WERCOVRDEVSQLD1\DBRefresh\ProdBackupFiles\WFMGMT'
 }
 $SDLC = @{
     SQLInstance = 'WERCOVRDEVSQLD1'
-    DatabaseName = 'FusionAvailabilityCacheDev'
-    DestinationDataDirectory = 'H:\SQLData'
-    DestinationLogDirectory = 'H:\SQLTLog'
-    Accounts = 'VRGUK\WebTeamReadOnly','VRGUK\Web Dev Team','VRGUK\SDLCQae','VRGUK\SDLCDev','VRGUK\devarajramasamy'
+    DatabaseName = 'WFMGMT'
+    DestinationDataDirectory = 'F:\SQLData'
+    DestinationLogDirectory = 'F:\SQLTLog'
+    
 }
-
 
 #Create folder if not present
 if (-not(Test-Path -Path $BackupLocation.SDLCDevFolder)) {New-Item -ItemType directory -Path $BackupLocation.SDLCDevFolder}
@@ -20,8 +19,8 @@ Get-ChildItem -Path $BackupLocation.SDLCDevFolder -Include * -File -Recurse | Fo
 
 write-host 'Copying Latest Backup File to SDLC Dev Server' -ForegroundColor Yellow
 
-#Find the lastest backup file and copy to the SDLC Dev Server
-Get-ChildItem -Path $BackupLocation.FusionAvailabilityCache -Filter "*.bak" -Recurse | 
+#Find the lastest backup file and copy to the SDLC Server
+Get-ChildItem -Path $BackupLocation.LiveWFMGMT -Filter "*.bak" -Recurse | 
 Sort-Object LastWriteTime -Descending | Select-Object -First 1  |
 Copy-Item  -Destination $BackupLocation.SDLCDevFolder -Verbose
 
@@ -45,22 +44,10 @@ Restore-DbaDatabase @restoreDbaDatabaseSplat
 $DBUsers = Get-DbaDatabaseUser $SDLC.SQLInstance -Database $SDLC.DatabaseName -ExcludeSystemUser 
 $DBUsers.Name | ForEach-Object {Remove-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -User $_}
 
-#Add new accounts to the database
-$SDLC.Accounts | ForEach-Object{New-DbaDbUser -SqlInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Login $_ -Username $_} 
-
-#Add account to the DBO role
-$SDLC.Accounts | ForEach-Object{
-    
-    $GrantDBOPermissions = @"
-    EXEC sp_addrolemember N'db_owner', N'$_'
+#Shrink database
+$ShrinkDatabase = @"
+    DBCC SHRINKDATABASE(N'WFMGMT')
 "@
-    Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $GrantDBOPermissions
-}
-
-#Shrink database Logfile
-$ShrinklogFile = @"
-    DBCC SHRINKFILE (N'FusionAvailabilityCache_log' , 0)
-"@
-Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $ShrinklogFile
+Invoke-Sqlcmd2 -ServerInstance $SDLC.SQLInstance -Database $SDLC.DatabaseName -Query $ShrinkDatabase
 
 

@@ -20,5 +20,5 @@ Find-DbaCommand Replication
 get-help Get-DbaRepPublication -Examples
 
 $SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*pubFusionILTCache*")}
-$SQLJobs.name
+#$SQLJobs.name
 Start-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Job $SQLJobs.name

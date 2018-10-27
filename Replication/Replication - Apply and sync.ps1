@@ -16,8 +16,8 @@ exec sp_addpushsubscription_agent @publication = N'pubFusionILTCache', @subscrib
 
 Invoke-Sqlcmd2 -ServerInstance WERCOVRDEVSQLD1 -Database TR4_DEV -Query $SubscriptionScript -Verbose
 
-Find-DbaCommand Replication
-get-help Get-DbaRepPublication -Examples
+#Find-DbaCommand Replication
+#get-help Get-DbaRepPublication -Examples
 
 $SQLJobs = Get-DbaAgentJob -SqlInstance WERCOVRDEVSQLD1 -Verbose | Where {($_.Category -eq "REPL-Snapshot" -and $_.Name -like "*pubFusionILTCache*")}
 #$SQLJobs.name

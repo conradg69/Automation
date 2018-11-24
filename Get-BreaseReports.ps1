@@ -1,11 +1,13 @@
 <#
     
 #>
+[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('LIVE', 'DEV', 'UAT', 'QAE')]
     [string[]]$Environment,
-    $ReportDownloadFolder = '\\WERCOVRDEVSQLD1\BreaseRefresh\Reports'
+
+    [string]$ReportDownloadFolder = '\\WERCOVRDEVSQLD1\BreaseRefresh\Reports'
 )
 
 $ReportServerURL = @{
@@ -16,11 +18,11 @@ $ReportServerURL = @{
 }
 
 $Folder = @{
-    Backup                     = '/BreaseReportBackups'
-    BreaseLive                 = '/Brease/'
-    BreaseDev                  = '/Brease_DEV/'
-    DetailReports              = "Detail Reports"
-    SelectorReports            = "Selector Reports"
+    Backup          = '/BreaseReportBackups'
+    BreaseLive      = '/Brease/'
+    BreaseDev       = '/Brease_DEV/'
+    DetailReports   = "Detail Reports"
+    SelectorReports = "Selector Reports"
 }
 $CurrentDateTime = Get-Date -Format FileDateTime 
 $DateTimeFormatted = $CurrentDateTime.Substring(0, 13)

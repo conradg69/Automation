@@ -20,6 +20,25 @@
                                                                                                     
          } 
 
+        @{
+           Nodename = 'Client2'
+           ServerName = 'Client2'
+           Role          = @('SQLENGINE')
+           Features = 'SQLENGINE,Replication'
+           MaxMemory = '3000'
+           MinMemory = '200'
+           DatabaseMailDisplayName = 'DC NonProd Client2'
+                                                                                                    
+         } 
+
+         @{
+           Nodename = 'Client3'
+           ServerName = 'Client3'
+           Role          = @('ReportServer')
+           Features = 'RS'
+           MaxMemory = '2000'
+           MinMemory = '100'                                                                                          
+         } 
          
       )
   
@@ -79,7 +98,6 @@
     Description = 'DBA Team Email Notifications'
     Ensure = 'Present'
     ReplyToAddress = 'norepley@thehoseasonsgroup.com'
-    #ServerName = 'LONPESSSQL01'
     TcpPort = 25
   
   }

@@ -11,7 +11,7 @@ Configuration DSCModules
 
 Import-DscResource –ModuleName PSDesiredStateConfiguration
 
- Node $AllNodes.where{ $_.Role.Contains("SQLENGINE") }.NodeName
+ Node $AllNodes.NodeName
     {
         Log ParamLog
         {

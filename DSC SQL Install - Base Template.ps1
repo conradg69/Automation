@@ -264,59 +264,6 @@ Configuration SQLInstall
 
         <#
 
-        SqlDatabaseOwner EPM_BIPLUS
-        {
-            Database = 'EPM_BIPLUS'
-            InstanceName = 'MSSQLSERVER'
-            Name = 'HYPSQL'
-            DependsOn = '[SqlSetup]InstallSQLInstance'
-            ServerName = 'LONPESSSQL01'
-        }
-
-        SqlDatabaseOwner EPM_CALCMGR
-        {
-            Database = 'EPM_CALCMGR'
-            InstanceName = 'MSSQLSERVER'
-            Name = 'HYPSQL'
-            DependsOn = '[SqlSetup]InstallSQLInstance'
-            ServerName = 'LONPESSSQL01'
-        }
-
-        SqlDatabaseOwner EPM_EAS
-        {
-            Database = 'EPM_EAS'
-            InstanceName = 'MSSQLSERVER'
-            Name = 'HYPSQL'
-            DependsOn = '[SqlSetup]InstallSQLInstance'
-            ServerName = 'LONPESSSQL01'
-        }
-
-        SqlDatabaseOwner EPM_EPMA
-        {
-            Database = 'EPM_EPMA'
-            InstanceName = 'MSSQLSERVER'
-            Name = 'HYPSQL'
-            DependsOn = '[SqlSetup]InstallSQLInstance'
-            ServerName = 'LONPESSSQL01'
-        }
-
-        SqlDatabaseOwner EPM_FDMEE
-        {
-            Database = 'EPM_FDMEE'
-            InstanceName = 'MSSQLSERVER'
-            Name = 'HYPSQL'
-            DependsOn = '[SqlSetup]InstallSQLInstance'
-            ServerName = 'LONPESSSQL01'
-        }
-
-        SqlDatabaseOwner EPM_SS
-        {
-            Database = 'EPM_SS'
-            InstanceName = 'MSSQLSERVER'
-            Name = 'HYPSQL'
-            DependsOn = '[SqlSetup]InstallSQLInstance'
-            ServerName = 'LONPESSSQL01'
-        }
         
         Script Add_sp_WhoIsActiveToDBADatabase
         {
@@ -822,6 +769,94 @@ Configuration SQLInstall
     }
  #>
     }
+
+    Node $AllNodes.where({ $_.Role -eq "ReportServer" }).NodeName 
+    {
+
+        $SSMS = $ConfigurationData.SSMSConfig
+        $SQLISOFile = $ConfigurationData.SQLISOFile
+        $SQLInstallConfig = $ConfigurationData.SQLInstallConfig
+        $DBADatabase = $ConfigurationData.DBADatabases
+        $DatabaseMail = $ConfigurationData.DatabaseMailConfig
+
+        File CopySSMSInstallFileToServer
+        {
+            SourcePath = $SSMS.PathSource
+            DestinationPath = $SSMS.PathDestination
+            Type = "File"
+            Ensure = "Present"
+        }
+
+        File TransferSQLServerIso2016ToServer
+        {
+            SourcePath =  $SQLISOFile.PathSource
+            DestinationPath = $SQLISOFile.PathDestination
+            Type = "File"
+            Ensure = "Present"
+        }
+
+        Script CopySQLInstallFilesToLocalFolder
+        {
+            GetScript =
+            {
+                $PathCheck = Test-Path -Path C:\SQLSetup\SQL2016\
+                
+                $vals = @{
+                    Exist = $PathCheck;
+                    
+                }
+                $vals
+            }
+            SetScript =
+            {
+                
+                $script = 
+                {
+                $setupDriveLetter = (Mount-DiskImage -ImagePath C:\SQLSetup\SQLInstall\SQLServer2016.iso -PassThru | Get-Volume).DriveLetter + ":\"
+                if ($setupDriveLetter -eq $null) {
+                throw "Could not mount SQL install iso"
+                                                }
+                 Copy-item -Force -Recurse -Verbose $setupDriveLetter -Destination C:\SQLSetup\SQL2016\
+                 #dismount the iso
+                 Dismount-DiskImage -ImagePath C:\SQLSetup\SQLInstall\SQLServer2016.iso
+                 }
+                    Invoke-Command -ComputerName localhost -ScriptBlock $script
+            }
+            TestScript =
+            {
+                $PathCheck = Test-Path -Path C:\SQLSetup\SQL2016\
+                
+                $res = $PathCheck
+                if ($res) {
+                    Write-Verbose "Folder already created"
+                } else {
+                    Write-Verbose "Folder not created"
+                }
+                $res
+            }
+            DependsOn = "[File]TransferSQLServerIso2016ToServer"
+        }
+
+        SqlSetup InstallSQLInstance
+        {
+           InstanceName = $SQLInstallConfig.InstanceName
+           Features = $Node.Features
+           SourcePath = $SQLInstallConfig.SourcePath
+           SQLSysAdminAccounts = @('Administrators')
+           InstanceDir = $SQLInstallConfig.InstanceDir
+           InstallSQLDataDir = $SQLInstallConfig.InstallSQLDataDir
+           InstallSharedDir = $SQLInstallConfig.InstallSharedDir
+           InstallSharedWOWDir = $SQLInstallConfig.InstallSharedWOWDir
+           DependsOn = '[Script]CopySQLInstallFilesToLocalFolder'
+            
+        }
+
+      
+
+    }
+
+
+
 }
 
 SQLInstall -ConfigurationData C:\SQLDSCInstall\SetupScripts\ServerConfiguration.psd1 -PackagePath "\\DC1\InstallMedia" -Verbose

@@ -9,6 +9,7 @@ Configuration DSCModules
         $PackagePath
     )
 
+    
 Import-DscResource –ModuleName PSDesiredStateConfiguration
 
  Node $AllNodes.NodeName

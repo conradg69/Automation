@@ -6,7 +6,8 @@
             NodeName = '*'
             PSDscAllowDomainUser = $true
             MofFiles = 'C:\SQLDSCInstall\SQLMofFiles'
-            DSCMofFileFolder = 'C:\SQLDSCInstall\SQLMofFiles\DSCModules\'     
+            DSCMofFileFolder     = 'C:\SQLDSCInstall\SQLMofFiles\DSCModules\' 
+            ModulePath           = 'C:\Program Files\WindowsPowershell\Modules\'    
          }
            
         @{

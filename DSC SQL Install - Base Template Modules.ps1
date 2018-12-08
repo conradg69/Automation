@@ -1,4 +1,4 @@
-sl C:\SQLDSCInstall\SQLMofFiles\
+Set-Location C:\SQLDSCInstall\SQLMofFiles\
 
 Configuration DSCModules
 {
@@ -8,8 +8,7 @@ Configuration DSCModules
         [String]
         $PackagePath
     )
-
-    
+ 
 Import-DscResource –ModuleName PSDesiredStateConfiguration
 
  Node $AllNodes.NodeName
@@ -27,7 +26,7 @@ Import-DscResource –ModuleName PSDesiredStateConfiguration
             Recurse = $true
             MatchSource = $true
             SourcePath = "$PackagePath\Modules"
-            DestinationPath = "C:\Program Files\WindowsPowershell\Modules\"
+            DestinationPath = $Node.ModulePath
         }
     }
  }
